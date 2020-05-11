@@ -17,6 +17,7 @@ def get_multiplier(quality):
 
 
 def extract(paths, quality):
+    output_paths = []
     for path in paths:
         try:
             print(path)
@@ -25,7 +26,10 @@ def extract(paths, quality):
             print("Extracting audio for file %s" % (path))
             file.audio.output(output_path, acodec='libvorbis', audio_bitrate=BITRATE*get_multiplier(quality),loglevel=0).run()
             print("Extraction completed for file %s" % (output_path))
-            # Here Communicate with server_comm
+            output_paths.append(output_path)
+            
         except:
             print("There was an error converting the file")
             sys.exit(-1)
+
+    return output_path
