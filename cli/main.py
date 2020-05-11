@@ -2,6 +2,9 @@ import argparse
 import audio_extract
 from vlc_comm import VLC_instance
 import time
+import threading
+import vlc_comm
+
 
 parser = argparse.ArgumentParser()
 group = parser.add_mutually_exclusive_group()
@@ -19,19 +22,30 @@ args=parser.parse_args()
 
 #init server conf.... create room
 
-instance = VLC_instance(1234)
-for file_path in args.f:
-    instance.enqueue(file_path)
-    instance.play()
-    instance.pause()
-    
-    # instance.pause()
-    # time.sleep(2)
-    # instance.play()
-    time.sleep(2)
-    # instance.faster_playback()
-    instance.getState()
+player = VLC_instance(1234)
+player.launch()
 
+b = threading.Thread(target=player.update, name='update')
+b.start()
+
+for file_path in args.f:
+    player.enqueue(file_path)
+    player.play()
+    time.sleep(4)
+    print(player.state)
+    player.seek(60)
+    time.sleep(3)
+    print(player.state)
+    time.sleep(5)
+    print(player.state)
+    time.sleep(5)
+    print(player.state)
+    # print(player.state)
+    # time.sleep(5)
+    # print(player.state)
+    # player.seek(60)
+    # time.sleep(2)
+    # print(player.state)
 
 
     

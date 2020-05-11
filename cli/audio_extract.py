@@ -32,4 +32,4 @@ def extract(paths, quality):
             print("There was an error converting the file")
             sys.exit(-1)
 
-    return output_path
+    return output_paths
