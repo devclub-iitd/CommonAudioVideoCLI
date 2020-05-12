@@ -4,6 +4,7 @@ from vlc_comm import VLC_instance
 import time
 from multiprocessing import Process
 import vlc_comm
+import util
 
 
 parser = argparse.ArgumentParser()
@@ -33,6 +34,8 @@ for file_path in args.f:
     time.sleep(0.5)
     player.seek(60)
     # time.sleep(0.1)
+
+    util.print_qr('https://pypi.org/project/PyQRCode/')
     print(player.getState())
     while(True):
         print(player.getState())

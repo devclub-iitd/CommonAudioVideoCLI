@@ -1,6 +1,7 @@
 import time
 import socket
 from select import select
+import pyqrcode
 
 
 def wait_until_error(f, timeout=0.5):
@@ -38,3 +39,13 @@ def send_until_writable(timeout=0.5):
 def check_writable(socket):
     a, writable, b = select([], [socket], [], 60)
     return writable == [socket]
+
+def print_qr(url):
+    image = pyqrcode.create(url)
+    image.svg('invite_link.svg', scale=1)
+    print(image.terminal(quiet_zone=1))
+
+
+
+
+
