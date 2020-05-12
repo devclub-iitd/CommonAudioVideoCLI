@@ -2,7 +2,7 @@ import argparse
 import audio_extract
 from vlc_comm import VLC_instance
 import time
-import threading
+from multiprocessing import Process
 import vlc_comm
 
 
@@ -24,28 +24,24 @@ args=parser.parse_args()
 
 player = VLC_instance(1234)
 player.launch()
+Process(target=player.update).start()
 
-b = threading.Thread(target=player.update, name='update')
-b.start()
-
+pos=60
 for file_path in args.f:
     player.enqueue(file_path)
     player.play()
-    time.sleep(4)
-    print(player.state)
+    time.sleep(0.5)
     player.seek(60)
-    time.sleep(3)
-    print(player.state)
-    time.sleep(5)
-    print(player.state)
-    time.sleep(5)
-    print(player.state)
-    # print(player.state)
-    # time.sleep(5)
-    # print(player.state)
-    # player.seek(60)
-    # time.sleep(2)
-    # print(player.state)
+    # time.sleep(0.1)
+    print(player.getState())
+    while(True):
+        print(player.getState())
+        time.sleep(5)
+        pos+=20
+        player.seek(pos)
+        time.sleep(0.1)
+
+
 
 
     
