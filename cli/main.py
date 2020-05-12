@@ -5,6 +5,7 @@ import time
 from multiprocessing import Process
 import vlc_comm
 import util
+from server_comm import *
 
 
 parser = argparse.ArgumentParser()
@@ -31,17 +32,23 @@ pos=60
 for file_path in args.f:
     player.enqueue(file_path)
     player.play()
-    time.sleep(0.5)
+    time.sleep(5)
     player.seek(60)
-    # time.sleep(0.1)
+    time.sleep(1)
 
-    util.print_qr('https://pypi.org/project/PyQRCode/')
+    # util.print_qr('https://pypi.org/project/PyQRCode/')
     print(player.getState())
+
+    signals = communicate(player)
+
+
+
+
     while(True):
         print(player.getState())
         time.sleep(5)
         pos+=20
-        player.seek(pos)
+        # player.seek(pos)
         time.sleep(0.1)
 
 
