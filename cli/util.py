@@ -47,5 +47,3 @@ def print_qr(url):
 
 
 
-
-

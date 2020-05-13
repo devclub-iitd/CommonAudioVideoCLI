@@ -12,13 +12,13 @@ class VLC_signals(socketio.ClientNamespace): # this is used internally by Server
     def on_disconnect(self):
         print('disconnected')
 
-    def on_play(self):
+    def on_play(self,*args, **kwargs):
         self.player.play()
     
-    def on_pause(self):
+    def on_pause(self,*args, **kwargs):
         self.player.pause()
 
-    def on_seek(self,position):
+    def on_seek(self,position,*args, **kwargs):
         self.player.seek(position)
 
 class ServerConnection:
@@ -41,10 +41,3 @@ class ServerConnection:
             'timestamp': time.time()*1000
         }
         self.signals.emit('seek',data)
-
-    
-
-
-
-
-
