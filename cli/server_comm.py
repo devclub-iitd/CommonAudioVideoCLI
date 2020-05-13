@@ -1,7 +1,8 @@
 import socketio
 from vlc_comm import VLC_instance
+import time
 
-class VLC_signals(socketio.ClientNamespace):
+class VLC_signals(socketio.ClientNamespace): # this is used internally by ServerConnection
     def bind(self,player):
         self.player = player
 
@@ -19,15 +20,30 @@ class VLC_signals(socketio.ClientNamespace):
 
     def on_seek(self,position):
         self.player.seek(position)
-        
-def communicate(vlc_instance):  
-    sio = socketio.Client()
-    vlc_signals = VLC_signals('/')
-    vlc_signals.bind(vlc_instance)
-    sio.register_namespace(vlc_signals)
-    sio.connect('http://localhost:3000')
 
-    return vlc_signals
+class ServerConnection:
+    def __init__(self,player):
+        sio = socketio.Client()
+        self.signals = VLC_signals('/')
+        self.signals.bind(player)
+        sio.register_namespace(self.signals)
+        sio.connect('http://localhost:3000')
+
+    def send_play(self):
+        self.signals.emit('play')
+    
+    def send_pause(self):
+        self.signals.emit('pause')
+
+    def send_seek(self,position):
+        data={
+            'position':position,
+            'timestamp': time.time()*1000
+        }
+        self.signals.emit('seek',data)
+
+    
+
 
 
 

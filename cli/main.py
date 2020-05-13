@@ -28,6 +28,10 @@ player = VLC_instance(1234)
 player.launch()
 Process(target=player.update).start()
 
+server = ServerConnection(player)
+server.send_play()
+server.send_seek(200)
+
 pos=60
 for file_path in args.f:
     player.enqueue(file_path)
@@ -39,7 +43,7 @@ for file_path in args.f:
     # util.print_qr('https://pypi.org/project/PyQRCode/')
     print(player.getState())
 
-    signals = communicate(player)
+    
 
 
 
