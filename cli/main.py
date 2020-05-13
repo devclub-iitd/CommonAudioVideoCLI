@@ -3,6 +3,7 @@ from audio_extract import extract
 import time
 from multiprocessing import Process, Pool
 from itertools import product
+import threading
 
 from vlc_comm import player
 from server_comm import server
@@ -49,7 +50,8 @@ def convert_async():
 
 time.sleep(1)
 player.launch()
-Process(target=player.update).start()
+Process(target=player.update,daemon=True).start()
+# threading.Thread(target=player.update).start()
 
 server.send('play',{})
 server.send('seek',{"position":200})

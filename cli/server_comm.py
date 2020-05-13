@@ -1,14 +1,12 @@
 import socketio
 import time
 from util import Singleton
-# from vlc_comm import VLCplayer
-# player = VLCplayer.getInstance()
 import vlc_comm
 
 
 class VLC_signals(socketio.ClientNamespace): # this is used internally by ServerConnection
     def bind(self):
-        pass
+        self.player = vlc_comm.VLCplayer()
     def on_connect(self):
         print('connected')
 
@@ -16,14 +14,14 @@ class VLC_signals(socketio.ClientNamespace): # this is used internally by Server
         print('disconnected')
 
     def on_play(self,*args, **kwargs):
-        vlc_comm.VLCplayer().play()
+        self.player.play()
     
     def on_pause(self,*args, **kwargs):
-        vlc_comm.VLCplayer().pause()
+        self.player.pause()
 
     def on_seek(self,position,*args, **kwargs):
         print("Seek signal for ",position)
-        vlc_comm.VLCplayer().seek(position)
+        self.player.seek(position)
 
 class ServerConnection(metaclass=Singleton):
     def __init__(self):
