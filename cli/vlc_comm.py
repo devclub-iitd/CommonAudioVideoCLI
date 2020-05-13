@@ -4,20 +4,25 @@ import subprocess
 import time
 import re
 import json
-
-from util import *
+from util import Singleton, send_until_writable, wait_until_error
+# from server_comm import ServerConnection
+# server = ServerConnection.getInstance()
+import server_comm
 
 TITLE_REGEX = "Title=(.*)$"
 DURATION_REGEX = "Duration=(.*)$"
-SEEK_REGEX = "seek request to (.*)%$"
+SEEK_REGEX = "seek request to (.*)%*$"
 PAUSE_REGEX = "toggling resume$"
 PLAY_REGEX = "toggling pause$"
 START_REGEX = "pts: 0"
 STOP_REGEX = "dead input"
 
+PORT = 1234
 
-class VLC_instance:
+
+class VLCplayer(metaclass=Singleton):
     def __init__(self, port, sub=None):
+        super().__init__()
         self.sub = sub
         self.port = port
         self.proc = None
@@ -82,10 +87,6 @@ class VLC_instance:
             return state
         
 
-def play_handler():
-    print("Play signal recieved")
-
-
 def parse_logs(player):
     for line in iter(player.proc.stdout.readline, ""):
             state = player.readState()
@@ -101,20 +102,31 @@ def parse_logs(player):
                 state['last_updated'] = time.perf_counter()
             elif(re.search(STOP_REGEX, line) is not None):
                 state['is_playing'] = False
+                del state['duration']
+                del state['title']
                 state['position'] = 0.0
                 state['last_updated'] = time.perf_counter()
             elif(re.search(PLAY_REGEX, line) is not None):
                 state['is_playing'] = True
                 state['last_updated'] = time.perf_counter()
+                server_comm.ServerConnection().send('play',state)
             elif(re.search(PAUSE_REGEX, line) is not None):
                 state['is_playing'] = False
                 state['position'] = player.getState()['position'] if player.getState() is not None else 0
                 state['last_updated'] = time.perf_counter()
+                server_comm.ServerConnection().send('pause', state)
             elif(re.search(SEEK_REGEX, line) is not None):
                 match = re.search(SEEK_REGEX, line).groups()[0]
                 if ('i_pos' in match):
                     match = match.split('=')[1].strip()
-                state['position'] = float(match)*float(state['duration'])/100000.0
-                state['last_updated'] = time.perf_counter()
-            
+                    state['position'] = float(match)/1000000.0
+                    state['last_updated'] = time.perf_counter()
+                else:
+                    match=match[:-1]
+                    state['position'] = float(match)*float(state['duration'])/100000.0
+                    server_comm.ServerConnection().send('seek', state)
+                    state['last_updated'] = time.perf_counter()
+                
             open('cache', 'w').write(json.dumps(state))
+
+player = VLCplayer(PORT)

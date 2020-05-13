@@ -1,12 +1,12 @@
 import argparse
 from audio_extract import extract
-from vlc_comm import VLC_instance
 import time
 from multiprocessing import Process, Pool
 from itertools import product
-import vlc_comm
-import util
-from server_comm import *
+
+from vlc_comm import player
+from server_comm import server
+
 
 parser = argparse.ArgumentParser()
 group = parser.add_mutually_exclusive_group()
@@ -48,13 +48,11 @@ def convert_async():
 
 
 time.sleep(1)
-player = VLC_instance(1234)
 player.launch()
 Process(target=player.update).start()
 
-server = ServerConnection(player)
-server.send_play()
-server.send_seek(200)
+server.send('play',{})
+server.send('seek',{"position":200})
 
 for file_path in args.f:
     print(args.f)

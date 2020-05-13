@@ -1,11 +1,14 @@
 import socketio
-from vlc_comm import VLC_instance
 import time
+from util import Singleton
+# from vlc_comm import VLCplayer
+# player = VLCplayer.getInstance()
+import vlc_comm
+
 
 class VLC_signals(socketio.ClientNamespace): # this is used internally by ServerConnection
-    def bind(self,player):
-        self.player = player
-
+    def bind(self):
+        pass
     def on_connect(self):
         print('connected')
 
@@ -13,31 +16,26 @@ class VLC_signals(socketio.ClientNamespace): # this is used internally by Server
         print('disconnected')
 
     def on_play(self,*args, **kwargs):
-        self.player.play()
+        vlc_comm.VLCplayer().play()
     
     def on_pause(self,*args, **kwargs):
-        self.player.pause()
+        vlc_comm.VLCplayer().pause()
 
     def on_seek(self,position,*args, **kwargs):
-        self.player.seek(position)
+        print("Seek signal for ",position)
+        vlc_comm.VLCplayer().seek(position)
 
-class ServerConnection:
-    def __init__(self,player):
+class ServerConnection(metaclass=Singleton):
+    def __init__(self):
+        super().__init__()
         sio = socketio.Client()
         self.signals = VLC_signals('/')
-        self.signals.bind(player)
+        self.signals.bind()
         sio.register_namespace(self.signals)
         sio.connect('http://localhost:3000')
 
-    def send_play(self):
-        self.signals.emit('play')
-    
-    def send_pause(self):
-        self.signals.emit('pause')
+    def send(self,signal,data):
+        data['last_updated'] = time.time()
+        self.signals.emit(signal,data)
 
-    def send_seek(self,position):
-        data={
-            'position':position,
-            'timestamp': time.time()*1000
-        }
-        self.signals.emit('seek',data)
+server = ServerConnection()
