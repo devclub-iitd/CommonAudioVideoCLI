@@ -8,22 +8,24 @@ import vlc_comm
 
 class VLC_signals(socketio.ClientNamespace): # this is used internally by ServerConnection
     def bind(self):
-        pass
+        self.player = vlc_comm.VLCplayer()
+
     def on_connect(self):
+        from vlc_comm import VLCplayer
         print('connected')
 
     def on_disconnect(self):
         print('disconnected')
 
     def on_play(self,*args, **kwargs):
-        vlc_comm.VLCplayer().play()
+        self.player.play()
     
     def on_pause(self,*args, **kwargs):
-        vlc_comm.VLCplayer().pause()
+        self.player.pause()
 
     def on_seek(self,position,*args, **kwargs):
         print("Seek signal for ",position)
-        vlc_comm.VLCplayer().seek(position)
+        self.player.seek(position)
 
 class ServerConnection():
     def __init__(self):

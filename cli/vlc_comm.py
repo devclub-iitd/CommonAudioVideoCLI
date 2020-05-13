@@ -9,7 +9,7 @@ from util import Singleton, send_until_writable, wait_until_error
 
 # from server_comm import ServerConnection
 # server = ServerConnection.getInstance()
-import server_comm
+# import server_comm
 
 TITLE_REGEX = "Title=(.*)$"
 DURATION_REGEX = "Duration=(.*)$"
@@ -90,6 +90,7 @@ class VLCplayer(metaclass=Singleton):
         
 
 def parse_logs(player):
+    import server_comm
     other_connection = server_comm.ServerConnection()
 
     for line in iter(player.proc.stdout.readline, ""):

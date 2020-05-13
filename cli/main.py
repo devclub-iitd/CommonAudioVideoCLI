@@ -4,8 +4,9 @@ import time
 from multiprocessing import Process, Pool
 from itertools import product
 
-from vlc_comm import player
 from server_comm import server
+from vlc_comm import player
+
 
 
 parser = argparse.ArgumentParser()
