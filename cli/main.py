@@ -5,8 +5,9 @@ from multiprocessing import Process, Pool
 from itertools import product
 import threading
 
-from vlc_comm import player
 from server_comm import server
+from vlc_comm import player
+
 
 
 parser = argparse.ArgumentParser()
@@ -51,7 +52,6 @@ def convert_async():
 time.sleep(1)
 player.launch()
 Process(target=player.update,daemon=True).start()
-# threading.Thread(target=player.update).start()
 
 server.send('play',{})
 server.send('seek',{"position":200})
@@ -61,8 +61,6 @@ for file_path in args.f:
     player.enqueue(file_path)
     time.sleep(2)
     player.play()
-    # for line in iter(player.proc.stdout.readline,""):
-    #     print(line)
     while(True):
         print(player.getState())
         time.sleep(1)
