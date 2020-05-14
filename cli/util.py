@@ -1,8 +1,7 @@
 import time
-import socket
+# import socket
 from select import select
 import pyqrcode
-
 
 
 def wait_until_error(f, timeout=0.5):
@@ -13,16 +12,15 @@ def wait_until_error(f, timeout=0.5):
         while(time.perf_counter() - st < timeout):
             try:
                 return f(*args, **kwargs)
-            except:
+            except Exception as ex:
+                print(ex)
                 continue
     return inner
-
 
 
 def send_until_writable(timeout=0.5):
     """ This will send a message to the socket only when it is writable and wait for timeout seconds
     for the socket to become writable, if the socket was busy. """
-
 
     def inner(f, socket, message):
         st = time.perf_counter()
@@ -38,12 +36,10 @@ def check_writable(socket):
     a, writable, b = select([], [socket], [], 60)
     return writable == [socket]
 
+
 def print_qr(url):
     """ Prints a QR code using the URL that we recieved from the server. """
-    
+
     image = pyqrcode.create(url)
     image.svg('invite_link.svg', scale=1)
     print(image.terminal(quiet_zone=1))
-
-
-

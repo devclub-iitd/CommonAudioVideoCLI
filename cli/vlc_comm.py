@@ -1,5 +1,5 @@
 import socket
-import sys
+# import sys
 import subprocess
 import time
 import re
@@ -33,7 +33,8 @@ class VLCplayer():  # Class that manages the VLC player instance on the machine.
     def launch(self):
         """ Launches a VLC instance """
 
-        bashCommand = 'vlc --extraintf rc --rc-host localhost:%d -vv' % (self.port)
+        bashCommand = 'vlc --extraintf rc --rc-host localhost:%d -vv' % (
+            self.port)
         if(self.sub is not None):
             bashCommand += " --sub-file %s" % (self.sub)
 
@@ -41,16 +42,16 @@ class VLCplayer():  # Class that manages the VLC player instance on the machine.
         self.proc = subprocess.Popen(bashCommand.split(
         ), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
 
-
         # Create a socket connection to the RC interface of VLC that is listening for commands at localhost:1234
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server_address = ('localhost', self.port)
         wait_until_error(self.sock.connect, timeout=5)(self.server_address)
-        
+
         # Dump any trash data like welcome message that we may recieve from the server after connecting
         self.sock.recv(1024)
 
     """ The following functions send a specific command to the VLC instance using the socket connection """
+
     def play(self):
         message = 'play\n'.encode()
         send_until_writable()(self.sock.sendall, self.sock, message)
@@ -85,10 +86,9 @@ class VLCplayer():  # Class that manages the VLC player instance on the machine.
         """ Keeps the VLC instance state updated by parsing the VLC logs that are generated """
         parse_logs(self)
 
-
     def getState(self):
-        """ Interprets the meaning of the dumped data in cache 
-        by calculating the live position of the video from the last_updated and postition keys 
+        """ Interprets the meaning of the dumped data in cache
+        by calculating the live position of the video from the last_updated and postition keys
         in the data. It returns the live state of the video """
 
         player = self
@@ -103,7 +103,7 @@ class VLCplayer():  # Class that manages the VLC player instance on the machine.
             state['position'] = final_pos
             state.pop('last_updated')
             return state
-        
+
 
 def parse_logs(player):
     """ A function that is to be run in a seperate process to parse VLC logs
@@ -111,24 +111,25 @@ def parse_logs(player):
     by sending the data to the server. """
 
     import server_comm
-    other_connection = server_comm.ServerConnection()   # Another instance to send the data since somehow sockets were inaccessible by this process
-    
+    # Another instance to send the data since somehow sockets were inaccessible by this process
+    other_connection = server_comm.ServerConnection()
+
     state = player.readState()
     if(state is None):
         state = {}
-    
+
     # Continuosly read the VLC logs
     for line in iter(player.proc.stdout.readline, ""):
-         # Get the title
-        if(re.search(TITLE_REGEX, line) is not None):  
+        # Get the title
+        if(re.search(TITLE_REGEX, line) is not None):
             state['title'] = re.search(TITLE_REGEX, line).groups()[0]
-        
-         # Get the duration
-        elif('duration' not in state.keys() and re.search(DURATION_REGEX, line) is not None):       
+
+        # Get the duration
+        elif('duration' not in state.keys() and re.search(DURATION_REGEX, line) is not None):
             state['duration'] = re.search(DURATION_REGEX, line).groups()[0]
 
         # Get START video event
-        elif(re.search(START_REGEX, line) is not None):    
+        elif(re.search(START_REGEX, line) is not None):
             state['position'] = 0.0
             state['is_playing'] = True
             state['last_updated'] = time.time()
@@ -150,7 +151,8 @@ def parse_logs(player):
         # Get PAUSE event
         elif(re.search(PAUSE_REGEX, line) is not None and state['is_playing']):
             state['is_playing'] = False
-            state['position'] = player.getState()['position'] if player.getState() is not None else 0
+            state['position'] = player.getState(
+            )['position'] if player.getState() is not None else 0
             state['last_updated'] = time.time()
             other_connection.send('pause', state)
 
@@ -159,21 +161,23 @@ def parse_logs(player):
             match = re.search(SEEK_REGEX, line).groups()[0]
 
             # This one occurs when arrow keys are used to seek
-            if ('i_pos' in match): 
-                # Match is the absolute duratoin 
+            if ('i_pos' in match):
+                # Match is the absolute duratoin
                 match = match.split('=')[1].strip()
                 state['position'] = float(match)/1000000.0
                 state['last_updated'] = time.time()
 
             # This is used when seek occurs through the slider
-            else:   
+            else:
                 # Match is the percentage of the total duration
-                match=match[:-1]
-                state['position'] = float(match)*float(state['duration'])/100000.0
+                match = match[:-1]
+                state['position'] = float(
+                    match)*float(state['duration'])/100000.0
                 state['last_updated'] = time.time()
             other_connection.send('seek', state)
 
-        # Dump the parsed data into cache   
+        # Dump the parsed data into cache
         open('cache', 'w').write(json.dumps(state))
+
 
 player = VLCplayer()
