@@ -4,24 +4,10 @@ from select import select
 import pyqrcode
 
 
-# class Singleton(type):
-#     """
-#     Define an Instance operation that lets clients access its unique
-#     instance.
-#     """
-
-#     def __init__(cls, name, bases, attrs, **kwargs):
-#         super().__init__(name, bases, attrs)
-#         cls._instance = None
-
-#     def __call__(cls, *args, **kwargs):
-#         if cls._instance is None:
-#             cls._instance = super().__call__(*args, **kwargs)
-#         return cls._instance
-
-
 
 def wait_until_error(f, timeout=0.5):
+    """ Wait for timeout seconds until the function stops throwing any errors. """
+
     def inner(*args, **kwargs):
         st = time.perf_counter()
         while(time.perf_counter() - st < timeout):
@@ -32,19 +18,12 @@ def wait_until_error(f, timeout=0.5):
     return inner
 
 
-def get_cmd_resp(socket, cmd, timeout=0.5):
-    st = time.perf_counter()
-    socket.sendall(cmd.encode())
-    recvd, resp = b"", ""
-    while(b'>' not in recvd and time.perf_counter() - st < timeout):
-        recvd += socket.recv(1024)
-        resp = recvd.decode().replace('>', '').strip()
-        if(resp == ""):
-            recvd.replace(b'>', b'')
-    return resp
-
 
 def send_until_writable(timeout=0.5):
+    """ This will send a message to the socket only when it is writable and wait for timeout seconds
+    for the socket to become writable, if the socket was busy. """
+
+
     def inner(f, socket, message):
         st = time.perf_counter()
         while(time.perf_counter() - st < timeout):
@@ -54,10 +33,14 @@ def send_until_writable(timeout=0.5):
 
 
 def check_writable(socket):
+    """ Checks whether the socket is writable """
+
     a, writable, b = select([], [socket], [], 60)
     return writable == [socket]
 
 def print_qr(url):
+    """ Prints a QR code using the URL that we recieved from the server. """
+    
     image = pyqrcode.create(url)
     image.svg('invite_link.svg', scale=1)
     print(image.terminal(quiet_zone=1))

@@ -10,57 +10,63 @@ from vlc_comm import player
 
 
 
-parser = argparse.ArgumentParser()
-group = parser.add_mutually_exclusive_group()
+def parse():
+    parser = argparse.ArgumentParser()
+    group = parser.add_mutually_exclusive_group()
 
-parser.add_argument('-f', '--file', required=True, dest="f",
-                    help="Path to video file", type=str, action="append")
-parser.add_argument('-s', '--sub', dest="sub",
-                    help="Load subtitle File", type=str, action="store")
-parser.add_argument(
-    '--qr', help="Show qr code with the link", dest="qr", action="store_true")
-parser.add_argument('--audio-quality', dest="q", help="Audio quality to sync from",
-                    choices=["low", "medium", "good", "high"], type=str, default="medium")
+    parser.add_argument('-f', '--file', required=True, dest="f",
+                        help="Path to video file", type=str, action="append")
+    parser.add_argument('-s', '--sub', dest="sub",
+                        help="Load subtitle File", type=str, action="store")
+    parser.add_argument(
+        '--qr', help="Show qr code with the link", dest="qr", action="store_true")
+    parser.add_argument('--audio-quality', dest="q", help="Audio quality to sync from",
+                        choices=["low", "medium", "good", "high"], type=str, default="medium")
 
-group.add_argument('--local', help="Host locally",
-                   dest="local", action="store_true")
-group.add_argument('--web', help="Route through a web server",
-                   dest="web", action="store_true")
+    group.add_argument('--local', help="Host locally",
+                    dest="local", action="store_true")
+    group.add_argument('--web', help="Route through a web server",
+                    dest="web", action="store_true")
 
-args = parser.parse_args()
-
+    return parser.parse_args()
 
 def send_to_server(name):   # TO be implemented in server_comm.py
-    print(f"Files ..{name}.. sending to server")
+    print(f"File ..{name}.. sending to server")
+    time.sleep(5)
+    print("File sent to server")
 
 
-def convert_async():
+def convert_async():    # Converts video files to audio files asynchronously using a pool of processes
     pool = Pool()
+    files=[]
     st = time.perf_counter()
     print("Converting files")
     p = pool.starmap_async(extract, product(
-        args.f, [args.q]), callback=send_to_server)
+        args.f, [args.q]), callback=files.extend)
 
     p.wait()
-    print(
-        f"Completed execution of {len(args.f)} processes in {time.perf_counter()-st} seconds")
-
+    print(f"Completed extraction of {len(args.f)} files in {time.perf_counter()-st} seconds")
+    return files
 
 ######################################
 
 
-time.sleep(1)
-player.launch()
-Process(target=player.update,daemon=True).start()
 
-server.send('play',{})
-server.send('seek',{"position":200})
+if __name__ == "__main__":
+    args = parse()
+    audio_files = convert_async()
 
-for file_path in args.f:
-    print(args.f)
-    player.enqueue(file_path)
-    time.sleep(2)
-    player.play()
-    while(True):
-        print(player.getState())
-        time.sleep(1)
+    player.launch()
+    Process(target=player.update).start()
+
+    for i in range(len(args.f)):
+        player.enqueue(args.f[i])
+        send_to_server(audio_files[i])
+
+    # To do --> Add support for changing items in playlist.
+    for i in range(len(args.f)):
+        player.seek(0)
+
+        while(True):
+            print(player.getState())
+            time.sleep(1)

@@ -5,6 +5,8 @@ BITRATE = 1000*16
 
 
 def get_multiplier(quality):
+    """ A multiplier to decide bitrate from the quality string """
+
     if quality == 'low':
         return 5
     elif(quality == 'medium'):
@@ -17,8 +19,9 @@ def get_multiplier(quality):
 
 
 def extract(path, quality="medium"):
+    """ Extractor function utilizing ffmpeg to extract audio from a given video file """
+
     try:
-        print(path)
         file = ffmpeg.input(path)
         output_path = path[:-3]+"ogg"
         print("Extracting audio for file %s" % (path))

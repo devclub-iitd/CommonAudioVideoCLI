@@ -1,12 +1,15 @@
 import socketio
 import time
-
+SERVER_ADDR = "http://localhost:5000"
 
 class VLC_signals(socketio.ClientNamespace): # this is used internally by ServerConnection
     def bind(self):
+        """ Binds the player instance to this class instance. """
+        
         from vlc_comm import player
         self.player = player
 
+    """ Functions with name like on_event are executed when a signal named 'event' is recieved from the server. """
     def on_connect(self):
         print('connected')
 
@@ -23,21 +26,31 @@ class VLC_signals(socketio.ClientNamespace): # this is used internally by Server
         print("Seek signal for ",position)
         self.player.seek(position)
 
-class ServerConnection():
+class ServerConnection():   # Class that handles all connections to the server.
     def __init__(self):
-        # super().__init__()
         self.sio = socketio.Client()
         self.sio.connect('http://localhost:3000')
 
     def send(self,signal,data):
-        data['last_updated'] = time.time()
+        """ Used to send data to the server with a corresponding signal"""
+
         self.sio.emit(signal,data)
 
     def start_listening(self):
+        """ Establish connection to the server and start listening for signals from the server """
+
         self.signals = VLC_signals('/')
         self.signals.bind()
         self.sio.register_namespace(self.signals)
 
+    def upload(self, fileName, path):
+        """ Uploads audio file to the webserver """
+        print("Uploading to server")
+        import requests
+        url = f"{SERVER_ADDR}/upload/"
+        files = {'file': (fileName, open(path, 'rb'), 'audio/ogg')}
+        r = requests.post(url=url, files=files)
+        print(r.json())
 
 server = ServerConnection()
 server.start_listening()
