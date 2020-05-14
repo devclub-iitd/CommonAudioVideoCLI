@@ -4,7 +4,7 @@ import subprocess
 import time
 import re
 import json
-from util import Singleton, send_until_writable, wait_until_error
+from util import send_until_writable, wait_until_error
 
 TITLE_REGEX = "Title=(.*)$"
 DURATION_REGEX = "Duration=(.*)$"
@@ -17,9 +17,10 @@ STOP_REGEX = "dead input"
 PORT = 1234
 
 
-class VLCplayer(metaclass=Singleton):
+class VLCplayer():
+
     def __init__(self, port, sub=None):
-        super().__init__()
+        # super().__init__()
         self.sub = sub
         self.port = port
         self.proc = None
@@ -120,6 +121,7 @@ def parse_logs(player):
             if ('i_pos' in match):
                 match = match.split('=')[1].strip()
                 state['position'] = float(match)/1000000.0
+                other_connection.send('seek', state)
                 state['last_updated'] = time.time()
             else:
                 match=match[:-1]

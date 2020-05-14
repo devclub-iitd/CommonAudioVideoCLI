@@ -4,8 +4,9 @@ import time
 
 class VLC_signals(socketio.ClientNamespace): # this is used internally by ServerConnection
     def bind(self):
-        from vlc_comm import VLCplayer
-        self.player = VLCplayer()
+        from vlc_comm import player
+        self.player = player
+
     def on_connect(self):
         print('connected')
 
