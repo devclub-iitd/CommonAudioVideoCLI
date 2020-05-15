@@ -29,8 +29,8 @@ def extract(path, quality="medium"):
                           audio_bitrate=BITRATE*get_multiplier(quality), loglevel=0).run()
         print("Extraction completed for file %s" % (output_path))
 
-    except:
-        print("There was an error converting the file")
+    except Exception as ex:
+        print("There was an error converting the file:", ex)
         sys.exit(-1)
 
     return output_path
