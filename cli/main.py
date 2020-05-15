@@ -5,7 +5,7 @@ from multiprocessing import Process, Pool
 from itertools import product
 # import threading
 
-# from server_comm import server
+from server_comm import server
 from vlc_comm import player
 
 
@@ -54,14 +54,14 @@ def convert_async():    # Converts video files to audio files asynchronously usi
 
 if __name__ == "__main__":
     args = parse()
-    audio_files = convert_async()
+    # audio_files = convert_async()
 
     player.launch()
     Process(target=player.update).start()
 
     for i in range(len(args.f)):
         player.enqueue(args.f[i])
-        send_to_server(audio_files[i])
+        # send_to_server(audio_files[i])
 
     # To do --> Add support for changing items in playlist.
     for i in range(len(args.f)):

@@ -6,14 +6,6 @@ import re
 import json
 from util import send_until_writable, wait_until_error
 
-TITLE_REGEX = "Title=(.*)$"
-DURATION_REGEX = "Duration=(.*)$"
-SEEK_REGEX = "seek request to (.*)%*$"
-PAUSE_REGEX = "toggling resume$"
-PLAY_REGEX = "toggling pause$"
-START_REGEX = "pts: 0"
-STOP_REGEX = "dead input"
-
 PORT = 1234
 
 
@@ -118,63 +110,78 @@ def parse_logs(player):
     if(state is None):
         state = {}
 
-    # Continuosly read the VLC logs
-    for line in iter(player.proc.stdout.readline, ""):
-        # Get the title
-        if(re.search(TITLE_REGEX, line) is not None):
-            state['title'] = re.search(TITLE_REGEX, line).groups()[0]
+    def on_title(match):
+        state['title'] = match.groups()[0]
 
-        # Get the duration
-        elif('duration' not in state.keys() and re.search(DURATION_REGEX, line) is not None):
-            state['duration'] = re.search(DURATION_REGEX, line).groups()[0]
+    def on_duration(match):
+        if 'duration' not in state.keys():
+            state['duration'] = match.groups()[0]
 
-        # Get START video event
-        elif(re.search(START_REGEX, line) is not None):
-            state['position'] = 0.0
-            state['is_playing'] = True
-            state['last_updated'] = time.time()
+    def on_start(match):
+        state['position'] = 0.0
+        state['is_playing'] = True
+        state['last_updated'] = time.time()
 
-        # Get STOP video event
-        elif(re.search(STOP_REGEX, line) is not None):
-            state['is_playing'] = False
-            del state['duration']
-            del state['title']
-            state['position'] = 0.0
-            state['last_updated'] = time.time()
+    def on_stop(match):
+        state['is_playing'] = False
+        del state['duration']
+        del state['title']
+        state['position'] = 0.0
+        state['last_updated'] = time.time()
 
-        # Get PLAY event
-        elif(re.search(PLAY_REGEX, line) is not None and not state['is_playing']):
+    def on_play(match):
+        if not state['is_playing']:
             state['is_playing'] = True
             state['last_updated'] = time.time()
             other_connection.send('play', state)
 
-        # Get PAUSE event
-        elif(re.search(PAUSE_REGEX, line) is not None and state['is_playing']):
+    def on_pause(match):
+        if state['is_playing']:
             state['is_playing'] = False
-            state['position'] = player.getState(
-            )['position'] if player.getState() is not None else 0
+            state['position'] = player.getState()['position'] if player.getState() is not None else 0
             state['last_updated'] = time.time()
             other_connection.send('pause', state)
 
-        # Get SEEK event
-        elif(re.search(SEEK_REGEX, line) is not None):
-            match = re.search(SEEK_REGEX, line).groups()[0]
+    def on_seek(match):
+        match = match.groups()[0]
+        if ('i_pos' in match):
+            # Match is the absolute duratoin
+            match = match.split('=')[1].strip()
+            state['position'] = float(match)/1000000.0
+            state['last_updated'] = time.time()
 
-            # This one occurs when arrow keys are used to seek
-            if ('i_pos' in match):
-                # Match is the absolute duratoin
-                match = match.split('=')[1].strip()
-                state['position'] = float(match)/1000000.0
-                state['last_updated'] = time.time()
+        # This is used when seek occurs through the slider
+        else:
+            # Match is the percentage of the total duration
+            match = match[:-1]
+            state['position'] = float(
+                match)*float(state['duration'])/100000.0
+            state['last_updated'] = time.time()
+        other_connection.send('seek', state)
 
-            # This is used when seek occurs through the slider
-            else:
-                # Match is the percentage of the total duration
-                match = match[:-1]
-                state['position'] = float(
-                    match)*float(state['duration'])/100000.0
-                state['last_updated'] = time.time()
-            other_connection.send('seek', state)
+    REGEX_DICT = {
+        "Title=(.*)$" : on_title,
+        "Duration=(.*)$" : on_duration,
+        "seek request to (.*)%*$" : on_seek,
+        "toggling resume$" : on_pause,
+        "toggling pause$": on_play,
+        "pts: 0" : on_start,
+        "dead input" : on_stop,
+    }
+
+    def get_regex_match(line):
+        for regex in REGEX_DICT:
+            match = re.search(regex,line)
+            if match:
+                return regex,match
+        return None,None
+
+    # Continuosly read the VLC logs
+    for line in iter(player.proc.stdout.readline, ""):
+
+        regex,match = get_regex_match(line)
+        if match:
+            REGEX_DICT[regex](match)
 
         # Dump the parsed data into cache
         open('cache', 'w').write(json.dumps(state))
