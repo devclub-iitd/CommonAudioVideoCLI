@@ -55,5 +55,3 @@ class ServerConnection():   # Class that handles all connections to the server.
         files = {'file': (fileName, open(path, 'rb'), 'audio/ogg')}
         r = requests.post(url=url, files=files)
         print(r.json())
-
-
