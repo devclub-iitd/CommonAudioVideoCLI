@@ -13,7 +13,7 @@ def wait_until_error(f, timeout=0.5):
             try:
                 return f(*args, **kwargs)
             except Exception as ex:
-                print(ex)
+                # print(ex)
                 continue
     return inner
 

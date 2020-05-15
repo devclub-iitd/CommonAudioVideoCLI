@@ -74,9 +74,9 @@ class VLCplayer():  # Class that manages the VLC player instance on the machine.
         send_until_writable()(self.sock.sendall, self.sock, message)
         time.sleep(0.5)
 
-    def update(self,server):
+    def update(self, server):
         """ Keeps the VLC instance state updated by parsing the VLC logs that are generated """
-        parse_logs(self,server)
+        parse_logs(self, server)
 
     def getState(self):
         """ Interprets the meaning of the dumped data in cache
@@ -97,7 +97,83 @@ class VLCplayer():  # Class that manages the VLC player instance on the machine.
             return state
 
 
-def parse_logs(player,server):
+def on_title(match, state, server):
+    state['title'] = match.groups()[0]
+
+
+def on_duration(match, state, server):
+    if 'duration' not in state.keys():
+        state['duration'] = match.groups()[0]
+
+
+def on_start(match, state, server):
+    state['position'] = 0.0
+    state['is_playing'] = True
+    state['last_updated'] = time.time()
+
+
+def on_stop(match, state, server):
+    state['is_playing'] = False
+    del state['duration']
+    del state['title']
+    state['position'] = 0.0
+    state['last_updated'] = time.time()
+
+
+def on_play(match, state, server):
+    if not state['is_playing']:
+        state['is_playing'] = True
+        state['last_updated'] = time.time()
+        server.send('play', state)
+
+
+def on_pause(match, state, server):
+    if state['is_playing']:
+        state['is_playing'] = False
+        state['position'] = player.getState(
+        )['position'] if player.getState() is not None else 0
+        state['last_updated'] = time.time()
+        server.send('pause', state)
+
+
+def on_seek(match, state, server):
+    match = match.groups()[0]
+    if ('i_pos' in match):
+        # Match is the absolute duratoin
+        match = match.split('=')[1].strip()
+        state['position'] = float(match)/1000000.0
+        state['last_updated'] = time.time()
+
+    # This is used when seek occurs through the slider
+    else:
+        # Match is the percentage of the total duration
+        match = match[:-1]
+        state['position'] = float(
+            match)*float(state['duration'])/100000.0
+        state['last_updated'] = time.time()
+    server.send('seek', state)
+
+
+def get_regex_match(line):
+    for regex in REGEX_DICT:
+        match = re.search(regex, line)
+        if match:
+            return regex, match
+    return None, None
+
+
+REGEX_DICT = {
+    "Title=(.*)$": on_title,
+    "Duration=(.*)$": on_duration,
+    "seek request to (.*)%*$": on_seek,
+    "toggling resume$": on_pause,
+    "toggling pause$": on_play,
+    "pts: 0": on_start,
+    "dead input": on_stop,
+}
+
+
+def parse_logs(player, server):
     """ A function that is to be run in a seperate process to parse VLC logs
     and get user events like START,STOP,PLAY,PAUSE,SEEK and accordingly respond
     by sending the data to the server. """
@@ -110,78 +186,12 @@ def parse_logs(player,server):
     if(state is None):
         state = {}
 
-    def on_title(match):
-        state['title'] = match.groups()[0]
-
-    def on_duration(match):
-        if 'duration' not in state.keys():
-            state['duration'] = match.groups()[0]
-
-    def on_start(match):
-        state['position'] = 0.0
-        state['is_playing'] = True
-        state['last_updated'] = time.time()
-
-    def on_stop(match):
-        state['is_playing'] = False
-        del state['duration']
-        del state['title']
-        state['position'] = 0.0
-        state['last_updated'] = time.time()
-
-    def on_play(match):
-        if not state['is_playing']:
-            state['is_playing'] = True
-            state['last_updated'] = time.time()
-            server.send('play', state)
-
-    def on_pause(match):
-        if state['is_playing']:
-            state['is_playing'] = False
-            state['position'] = player.getState()['position'] if player.getState() is not None else 0
-            state['last_updated'] = time.time()
-            server.send('pause', state)
-
-    def on_seek(match):
-        match = match.groups()[0]
-        if ('i_pos' in match):
-            # Match is the absolute duratoin
-            match = match.split('=')[1].strip()
-            state['position'] = float(match)/1000000.0
-            state['last_updated'] = time.time()
-
-        # This is used when seek occurs through the slider
-        else:
-            # Match is the percentage of the total duration
-            match = match[:-1]
-            state['position'] = float(
-                match)*float(state['duration'])/100000.0
-            state['last_updated'] = time.time()
-        server.send('seek', state)
-
-    REGEX_DICT = {
-        "Title=(.*)$" : on_title,
-        "Duration=(.*)$" : on_duration,
-        "seek request to (.*)%*$" : on_seek,
-        "toggling resume$" : on_pause,
-        "toggling pause$": on_play,
-        "pts: 0" : on_start,
-        "dead input" : on_stop,
-    }
-
-    def get_regex_match(line):
-        for regex in REGEX_DICT:
-            match = re.search(regex,line)
-            if match:
-                return regex,match
-        return None,None
-
     # Continuosly read the VLC logs
     for line in iter(player.proc.stdout.readline, ""):
 
-        regex,match = get_regex_match(line)
+        regex, match = get_regex_match(line)
         if match:
-            REGEX_DICT[regex](match)
+            REGEX_DICT[regex](match, state, server)
 
         # Dump the parsed data into cache
         open('cache', 'w').write(json.dumps(state))
