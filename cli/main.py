@@ -2,10 +2,11 @@ import argparse
 from audio_extract import extract
 import time
 from multiprocessing import Process, Pool
+from multiprocessing.managers import BaseManager
 from itertools import product
 # import threading
 
-from server_comm import server
+from server_comm import ServerConnection
 from vlc_comm import player
 
 
@@ -57,7 +58,14 @@ if __name__ == "__main__":
     # audio_files = convert_async()
 
     player.launch()
-    Process(target=player.update).start()
+
+    BaseManager.register('ServerConnection', ServerConnection)
+    manager = BaseManager()
+    manager.start()
+    server = manager.ServerConnection()
+    server.start_listening()
+
+    Process(target=player.update, args=(server,)).start()
 
     for i in range(len(args.f)):
         player.enqueue(args.f[i])

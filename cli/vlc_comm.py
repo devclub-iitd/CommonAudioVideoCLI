@@ -74,9 +74,9 @@ class VLCplayer():  # Class that manages the VLC player instance on the machine.
         send_until_writable()(self.sock.sendall, self.sock, message)
         time.sleep(0.5)
 
-    def update(self):
+    def update(self,server):
         """ Keeps the VLC instance state updated by parsing the VLC logs that are generated """
-        parse_logs(self)
+        parse_logs(self,server)
 
     def getState(self):
         """ Interprets the meaning of the dumped data in cache
@@ -97,14 +97,14 @@ class VLCplayer():  # Class that manages the VLC player instance on the machine.
             return state
 
 
-def parse_logs(player):
+def parse_logs(player,server):
     """ A function that is to be run in a seperate process to parse VLC logs
     and get user events like START,STOP,PLAY,PAUSE,SEEK and accordingly respond
     by sending the data to the server. """
 
-    import server_comm
+    # import server_comm
     # Another instance to send the data since somehow sockets were inaccessible by this process
-    other_connection = server_comm.ServerConnection()
+    # other_connection = server_comm.ServerConnection()
 
     state = player.readState()
     if(state is None):
@@ -133,14 +133,14 @@ def parse_logs(player):
         if not state['is_playing']:
             state['is_playing'] = True
             state['last_updated'] = time.time()
-            other_connection.send('play', state)
+            server.send('play', state)
 
     def on_pause(match):
         if state['is_playing']:
             state['is_playing'] = False
             state['position'] = player.getState()['position'] if player.getState() is not None else 0
             state['last_updated'] = time.time()
-            other_connection.send('pause', state)
+            server.send('pause', state)
 
     def on_seek(match):
         match = match.groups()[0]
@@ -157,7 +157,7 @@ def parse_logs(player):
             state['position'] = float(
                 match)*float(state['duration'])/100000.0
             state['last_updated'] = time.time()
-        other_connection.send('seek', state)
+        server.send('seek', state)
 
     REGEX_DICT = {
         "Title=(.*)$" : on_title,

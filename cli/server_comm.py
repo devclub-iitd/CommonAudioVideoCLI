@@ -57,5 +57,3 @@ class ServerConnection():   # Class that handles all connections to the server.
         print(r.json())
 
 
-server = ServerConnection()
-server.start_listening()
