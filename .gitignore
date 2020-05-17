@@ -3,6 +3,9 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+#vscode conf
+.vscode
+
 # C extensions
 *.so
 
@@ -129,3 +132,4 @@ dmypy.json
 .pyre/
 .gitsecret/keys/random_seed
 !*.secret
+cli/cache
