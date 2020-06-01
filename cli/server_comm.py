@@ -15,6 +15,10 @@ class VLC_signals(socketio.ClientNamespace):
 
     def on_connect(self):
         print('connected')
+    
+    def on_userId(self,data):
+        # self.userId = data.userId
+        print('userId is ',data)
 
     def on_disconnect(self):
         print('disconnected')
@@ -33,7 +37,7 @@ class VLC_signals(socketio.ClientNamespace):
 class ServerConnection():   # Class that handles all connections to the server.
     def __init__(self):
         self.sio = socketio.Client()
-        self.sio.connect('http://localhost:3000')
+        self.sio.connect('http://localhost:5000')
 
     def send(self, signal, data):
         """ Used to send data to the server with a corresponding signal"""

@@ -68,6 +68,7 @@ if __name__ == "__main__":
     Process(target=player.update, args=(server,)).start()
 
     for i in range(len(args.f)):
+        server.send('createRoom',{'title':'abc'})
         player.enqueue(args.f[i])
         # send_to_server(audio_files[i])
 

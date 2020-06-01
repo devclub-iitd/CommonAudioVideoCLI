@@ -133,3 +133,4 @@ dmypy.json
 .gitsecret/keys/random_seed
 !*.secret
 cli/cache
+cache
