@@ -4,11 +4,10 @@ import time
 from multiprocessing import Process, Pool
 from multiprocessing.managers import BaseManager
 from itertools import product
-# import threading
 
 from server_comm import ServerConnection
 from vlc_comm import player
-
+from util import getRandomString
 
 def parse():
     parser = argparse.ArgumentParser()
@@ -64,18 +63,26 @@ if __name__ == "__main__":
     manager.start()
     server = manager.ServerConnection()
     server.start_listening()
-
+    
     Process(target=player.update, args=(server,)).start()
 
     for i in range(len(args.f)):
-        server.send('createRoom',{'title':'abc'})
         player.enqueue(args.f[i])
-        # send_to_server(audio_files[i])
+        player.pause()
+        try:
+            title = player.getState()['title']
+        except:
+            title=getRandomString(10)
+        
+        # server.upload(getRandomString(5),audio_files[i])
+        server.create_room(title)
+        
+        
 
     # To do --> Add support for changing items in playlist.
     for i in range(len(args.f)):
         player.seek(0)
+        player.play()
 
         while(True):
-            print(player.getState())
-            time.sleep(1)
+            time.sleep(2)

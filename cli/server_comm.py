@@ -1,5 +1,5 @@
 import socketio
-# import time
+import time
 SERVER_ADDR = "http://localhost:5000"
 
 
@@ -17,31 +17,45 @@ class VLC_signals(socketio.ClientNamespace):
         print('connected')
     
     def on_userId(self,data):
-        # self.userId = data.userId
         print('userId is ',data)
 
     def on_disconnect(self):
         print('disconnected')
 
     def on_play(self, *args, **kwargs):
+        state=args[0]
+        print("Play signal recieved with the following data",state)
         self.player.play()
 
     def on_pause(self, *args, **kwargs):
+        state = args[0]
+        print("Pause signal recieved with the following data",state)
         self.player.pause()
 
-    def on_seek(self, position, *args, **kwargs):
-        print("Seek signal for ", position)
-        self.player.seek(position)
+    def on_seek(self, *args, **kwargs):
+        state = args[0]
+        print("Seek signal recieved with the following data",state)
+        self.player.seek(int(time.time() - state['last_updated'] + state['position']))
+
+    def on_createRoom(self,*args, **kwargs):
+        self.roomId = args[0]['roomId']
+        url = f"http://localhost:5500/index.html/?roomId={self.roomId}"
+        print(f"Please visit {url}")
+        print("Or scan the QR code given below")
+        from util import print_qr
+        print_qr(url)
 
 
 class ServerConnection():   # Class that handles all connections to the server.
     def __init__(self):
         self.sio = socketio.Client()
         self.sio.connect('http://localhost:5000')
+        
+        # For testing purposes...
+        self.trackId = '5ed554389cd979784f6926e3'
 
     def send(self, signal, data):
         """ Used to send data to the server with a corresponding signal"""
-
         self.sio.emit(signal, data)
 
     def start_listening(self):
@@ -51,11 +65,16 @@ class ServerConnection():   # Class that handles all connections to the server.
         self.signals.bind()
         self.sio.register_namespace(self.signals)
 
+    def create_room(self,title):
+        self.send('createRoom',{'title':title,'trackId':self.trackId})
+
     def upload(self, fileName, path):
         """ Uploads audio file to the webserver """
         print("Uploading to server")
         import requests
-        url = f"{SERVER_ADDR}/upload/"
+        url = f"{SERVER_ADDR}/api/upload/"
         files = {'file': (fileName, open(path, 'rb'), 'audio/ogg')}
-        r = requests.post(url=url, files=files)
+        r = requests.post(url=url, files=files,data={"title":fileName})
         print(r.json())
+        self.trackId = r.json()['trackId']
+

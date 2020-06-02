@@ -7,7 +7,7 @@ import json
 from util import send_until_writable, wait_until_error
 
 PORT = 1234
-
+# send_signal = True
 
 class VLCplayer():  # Class that manages the VLC player instance on the machine.
 
@@ -45,19 +45,27 @@ class VLCplayer():  # Class that manages the VLC player instance on the machine.
     """ The following functions send a specific command to the VLC instance using the socket connection """
 
     def play(self):
+        # send_signal = False
         message = 'play\n'.encode()
         send_until_writable()(self.sock.sendall, self.sock, message)
         time.sleep(0.5)
+        # send_signal = True
 
     def pause(self):
+        # send_signal = False
         message = 'pause\n'.encode()
         send_until_writable()(self.sock.sendall, self.sock, message)
         time.sleep(0.5)
+        # send_signal = True
 
     def seek(self, position):
+        # send_signal = False
+        # print(f"Seeking to {position} and send_signal set to {send_signal}")
         message = f"seek {position}\n".encode()
         send_until_writable()(self.sock.sendall, self.sock, message)
         time.sleep(0.5)
+        send_signal = True
+        # print(f"send_signal again set to {send_signal}")
 
     def enqueue(self, filePath):
         message = f"enqueue {filePath}\n".encode()
@@ -98,6 +106,7 @@ class VLCplayer():  # Class that manages the VLC player instance on the machine.
 
 
 def on_title(match, state, server):
+    print("Found title!")
     state['title'] = match.groups()[0]
 
 
@@ -115,7 +124,11 @@ def on_start(match, state, server):
 def on_stop(match, state, server):
     state['is_playing'] = False
     del state['duration']
-    del state['title']
+    try:
+        del state['title']
+    except:
+        print("No title found")
+    
     state['position'] = 0.0
     state['last_updated'] = time.time()
 
