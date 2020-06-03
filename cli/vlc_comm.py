@@ -116,9 +116,10 @@ def on_duration(match, state, server):
 
 
 def on_start(match, state, server):
-    state['position'] = 0.0
-    state['is_playing'] = True
-    state['last_updated'] = time.time()
+    if 'is_playing' not in state:
+        state['is_playing'] = True    
+        state['position'] = 0.0    
+        state['last_updated'] = time.time()
 
 
 def on_stop(match, state, server):
@@ -131,6 +132,7 @@ def on_stop(match, state, server):
     
     state['position'] = 0.0
     state['last_updated'] = time.time()
+    print('at beginning',match)
 
 
 def on_play(match, state, server):
@@ -138,6 +140,7 @@ def on_play(match, state, server):
         state['is_playing'] = True
         state['last_updated'] = time.time()
         server.send('play', state)
+        # print(match)
 
 
 def on_pause(match, state, server):
@@ -156,6 +159,7 @@ def on_seek(match, state, server):
         match = match.split('=')[1].strip()
         state['position'] = float(match)/1000000.0
         state['last_updated'] = time.time()
+        
 
     # This is used when seek occurs through the slider
     else:
@@ -164,6 +168,7 @@ def on_seek(match, state, server):
         state['position'] = float(
             match)*float(state['duration'])/100000.0
         state['last_updated'] = time.time()
+    # print('seeked to ',state['position'])
     server.send('seek', state)
 
 

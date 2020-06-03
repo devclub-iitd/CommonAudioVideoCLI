@@ -19,6 +19,8 @@ def parse():
                         help="Load subtitle File", type=str, action="store")
     parser.add_argument(
         '--qr', help="Show qr code with the link", dest="qr", action="store_true")
+    parser.add_argument(
+        '--control', help="only host can control play/pause signals", dest="onlyHost", action="store_true")
     parser.add_argument('--audio-quality', dest="q", help="Audio quality to sync from",
                         choices=["low", "medium", "good", "high"], type=str, default="medium")
 
@@ -26,7 +28,7 @@ def parse():
                        dest="local", action="store_true")
     group.add_argument('--web', help="Route through a web server",
                        dest="web", action="store_true")
-
+    
     return parser.parse_args()
 
 
@@ -55,7 +57,7 @@ def convert_async():    # Converts video files to audio files asynchronously usi
 if __name__ == "__main__":
     args = parse()
     # audio_files = convert_async()
-
+    print(args.onlyHost)
     player.launch()
 
     BaseManager.register('ServerConnection', ServerConnection)
@@ -75,14 +77,15 @@ if __name__ == "__main__":
             title=getRandomString(10)
         
         # server.upload(getRandomString(5),audio_files[i])
-        server.create_room(title)
+        server.create_room(title,args.onlyHost)
         
         
 
     # To do --> Add support for changing items in playlist.
     for i in range(len(args.f)):
         player.seek(0)
-        player.play()
+        # player.play()
 
         while(True):
-            time.sleep(2)
+            print(player.getState())
+            time.sleep(1)

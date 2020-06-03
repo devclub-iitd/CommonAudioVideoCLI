@@ -57,6 +57,7 @@ class ServerConnection():   # Class that handles all connections to the server.
     def send(self, signal, data):
         """ Used to send data to the server with a corresponding signal"""
         self.sio.emit(signal, data)
+        print(signal,data)
 
     def start_listening(self):
         """ Establish connection to the server and start listening for signals from the server """
@@ -65,8 +66,8 @@ class ServerConnection():   # Class that handles all connections to the server.
         self.signals.bind()
         self.sio.register_namespace(self.signals)
 
-    def create_room(self,title):
-        self.send('createRoom',{'title':title,'trackId':self.trackId})
+    def create_room(self,title,onlyHost):
+        self.send('createRoom',{'title':title,'trackId':self.trackId,'onlyHost': onlyHost})
 
     def upload(self, fileName, path):
         """ Uploads audio file to the webserver """

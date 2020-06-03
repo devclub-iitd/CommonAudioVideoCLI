@@ -134,3 +134,4 @@ dmypy.json
 !*.secret
 cli/cache
 cache
+invite_link.svg
