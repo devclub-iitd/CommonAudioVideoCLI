@@ -1,5 +1,4 @@
 import socket
-# import sys
 import subprocess
 import time
 import re
@@ -7,7 +6,6 @@ import json
 from util import send_until_writable, wait_until_error
 
 PORT = 1234
-# send_signal = True
 
 
 class VLCplayer():  # Class that manages the VLC player instance on the machine.
@@ -46,27 +44,19 @@ class VLCplayer():  # Class that manages the VLC player instance on the machine.
     """ The following functions send a specific command to the VLC instance using the socket connection """
 
     def play(self):
-        # send_signal = False
         message = 'play\n'.encode()
         send_until_writable()(self.sock.sendall, self.sock, message)
         time.sleep(0.5)
-        # send_signal = True
 
     def pause(self):
-        # send_signal = False
         message = 'pause\n'.encode()
         send_until_writable()(self.sock.sendall, self.sock, message)
         time.sleep(0.5)
-        # send_signal = True
 
     def seek(self, position):
-        # send_signal = False
-        # print(f"Seeking to {position} and send_signal set to {send_signal}")
         message = f"seek {position}\n".encode()
         send_until_writable()(self.sock.sendall, self.sock, message)
         time.sleep(0.5)
-        send_signal = True
-        # print(f"send_signal again set to {send_signal}")
 
     def enqueue(self, filePath):
         message = f"enqueue {filePath}\n".encode()
@@ -133,7 +123,7 @@ def on_stop(match, state, server):
 
     state['position'] = 0.0
     state['last_updated'] = time.time()
-    print('at beginning', match)
+    # print('at beginning', match)
 
 
 def on_play(match, state, server):
@@ -171,7 +161,7 @@ def on_seek(match, state, server):
 
     # this is for mp4 files
     else:
-        print(int(match), match)
+        # print(int(match), match)
         state['position'] = int(match)/1000
         state['last_updated'] = time.time()
 
@@ -216,7 +206,7 @@ def parse_logs(player, server):
 
         regex, match = get_regex_match(line)
         if match:
-            print(regex)
+            # print(regex)
             REGEX_DICT[regex](match, state, server)
 
         # Dump the parsed data into cache

@@ -9,6 +9,8 @@ from itertools import product
 from server_comm import ServerConnection
 from vlc_comm import player
 from util import getRandomString
+import sys
+import signal
 
 def parse():
     parser = argparse.ArgumentParser()
@@ -53,25 +55,33 @@ def convert_async():    # Converts video files to audio files asynchronously usi
     return files
 
 ######################################
+def exitHandler(*args, **kwargs):
+    print("\nExiting now..Goodbye!")
+    if(os.path.exists('cache')):
+        try:
+            os.remove('cache')
+        except:
+            print("Cleared Cache")
+        
+          
+    sys.exit(0) 
 
+if __name__ == '__main__':
 
-if __name__ == "__main__":
-    if os.path.exists('cache'):
-        print('deleting cache')
-        os.remove('cache')
+    signal.signal(signal.SIGINT, exitHandler)
 
     args = parse()
-    # audio_files = convert_async()
-    print(args.onlyHost)
-    player.launch()
 
+        # audio_files = convert_async()
+
+    player.launch()
     BaseManager.register('ServerConnection', ServerConnection)
     manager = BaseManager()
     manager.start()
     server = manager.ServerConnection()
     server.start_listening()
-    
-    Process(target=player.update, args=(server,)).start()
+
+    Process(target=player.update, args=(server, )).start()
 
     for i in range(len(args.f)):
         player.enqueue(args.f[i])
@@ -79,19 +89,22 @@ if __name__ == "__main__":
         try:
             title = player.getState()['title']
         except:
-            title=getRandomString(10)
-        
-        name = getRandomString(5)
-        # server.upload(name,audio_files[i])
-        server.create_room(title,args.onlyHost)
-        
-        
+            title = getRandomString(10)
 
-    # To do --> Add support for changing items in playlist.
+            # name = getRandomString(5)
+            # server.upload(name,audio_files[i])
+
+        server.create_room(title, args.onlyHost)
+
+        # To do --> Add support for changing items in playlist.
+
     for i in range(len(args.f)):
         player.seek(0)
-        # player.play()
 
-        while(True):
-            print(player.getState())
+            # player.play()
+
+        while True:
+
+                # print(player.getState())
+
             time.sleep(1)
