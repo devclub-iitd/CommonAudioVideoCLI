@@ -38,6 +38,7 @@ $ python3 cli/main.py [--flags]
 | --audio-quality| low/medium/good/high | the quality of the audio to be extracted from the video file| no | medium
 | --local |	- | set up local web server on the host for streaming
 |--web| - | use already hosted webserver 	
+|--control| - | only the host can control playback
 
 
 

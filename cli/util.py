@@ -13,8 +13,9 @@ def wait_until_error(f, timeout=0.5):
         while(time.perf_counter() - st < timeout):
             try:
                 return f(*args, **kwargs)
-            except:
-                continue
+            except Exception as e:
+                if(e or not e):
+                    continue
     return inner
 
 
@@ -44,9 +45,11 @@ def print_qr(url):
     image.svg('invite_link.svg', scale=1)
     print(image.terminal(quiet_zone=1))
 
+
 def getRandomString(length):
+
     charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-    out=""
+    out = ""
     for i in range(length):
-        out+=charset[random.randint(0,len(charset)-1)]
+        out += charset[random.randint(0, len(charset)-1)]
     return out

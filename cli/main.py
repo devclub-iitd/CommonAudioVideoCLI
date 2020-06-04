@@ -12,6 +12,7 @@ from util import getRandomString
 import sys
 import signal
 
+
 def parse():
     parser = argparse.ArgumentParser()
     group = parser.add_mutually_exclusive_group()
@@ -31,7 +32,6 @@ def parse():
                        dest="local", action="store_true")
     group.add_argument('--web', help="Route through a web server",
                        dest="web", action="store_true")
-    
     return parser.parse_args()
 
 
@@ -41,7 +41,9 @@ def send_to_server(name):   # TO be implemented in server_comm.py
     print("File sent to server")
 
 
-def convert_async():    # Converts video files to audio files asynchronously using a pool of processes
+def convert_async():
+    """ Converts video files to audio files asynchronously
+    using a pool of processes """
     pool = Pool()
     files = []
     st = time.perf_counter()
@@ -50,21 +52,22 @@ def convert_async():    # Converts video files to audio files asynchronously usi
         args.f, [args.q]), callback=files.extend)
 
     p.wait()
-    print(
-        f"Completed extraction of {len(args.f)} files in {time.perf_counter()-st} seconds")
+    print(f"Completed extraction of {len(args.f)} files in {time.perf_counter()-st} seconds")
     return files
 
 ######################################
+
+
 def exitHandler(*args, **kwargs):
     print("\nExiting now..Goodbye!")
     if(os.path.exists('cache')):
         try:
             os.remove('cache')
-        except:
-            print("Cleared Cache")
-        
-          
-    sys.exit(0) 
+        except Exception as e:
+            if(e or not e):
+                print("Cleared Cache")
+    sys.exit(0)
+
 
 if __name__ == '__main__':
 
@@ -72,7 +75,7 @@ if __name__ == '__main__':
 
     args = parse()
 
-        # audio_files = convert_async()
+    # audio_files = convert_async()
 
     player.launch()
     BaseManager.register('ServerConnection', ServerConnection)
@@ -88,23 +91,20 @@ if __name__ == '__main__':
         player.pause()
         try:
             title = player.getState()['title']
-        except:
-            title = getRandomString(10)
+        except Exception as e:
+            if(e or not e):
+                title = getRandomString(10)
 
-            # name = getRandomString(5)
-            # server.upload(name,audio_files[i])
+        # name = getRandomString(5)
+        # server.upload(name,audio_files[i])
 
         server.create_room(title, args.onlyHost)
 
-        # To do --> Add support for changing items in playlist.
+    # To do --> Add support for changing items in playlist.
 
     for i in range(len(args.f)):
         player.seek(0)
-
-            # player.play()
-
+        # player.play()
         while True:
-
-                # print(player.getState())
-
+            # print(player.getState())
             time.sleep(1)

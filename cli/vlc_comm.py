@@ -118,8 +118,9 @@ def on_stop(match, state, server):
     del state['duration']
     try:
         del state['title']
-    except:
-        print("No title found")
+    except Exception as e:
+        if(e or not e):
+            print("No title found")
 
     state['position'] = 0.0
     state['last_updated'] = time.time()
@@ -180,7 +181,7 @@ def get_regex_match(line):
 REGEX_DICT = {
     "Title=(.*)$": on_title,
     "Duration=(.*)$": on_duration,
-    "seek request to (.*)%*$|gives (\d*)ms": on_seek,
+    "seek request to (.*)%*$|gives ([0-9]*)ms": on_seek,
     "toggling resume$": on_pause,
     "toggling pause$": on_play,
     "xspf' successfully opened": on_start,
