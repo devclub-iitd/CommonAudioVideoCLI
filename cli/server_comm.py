@@ -39,12 +39,11 @@ class VLC_signals(socketio.ClientNamespace):
 
     def on_createRoom(self,*args, **kwargs):
         self.roomId = args[0]['roomId']
-        url = f"http://localhost:5500/index.html/?roomId={self.roomId}"
+        url = f"file:///home/saptarshi/dev/devclub/projects/AudioStreamingClient/Client/index.html?roomId={self.roomId}"
         print(f"Please visit {url}")
         print("Or scan the QR code given below")
         from util import print_qr
         print_qr(url)
-
 
 class ServerConnection():   # Class that handles all connections to the server.
     def __init__(self):
@@ -52,7 +51,8 @@ class ServerConnection():   # Class that handles all connections to the server.
         self.sio.connect('http://localhost:5000')
         
         # For testing purposes...
-        self.trackId = '5ed554389cd979784f6926e3'
+        # self.trackId = '5ed554389cd979784f6926e3'
+        self.trackId = '5ed88aae25f4787bea4cc07f'
 
     def send(self, signal, data):
         """ Used to send data to the server with a corresponding signal"""

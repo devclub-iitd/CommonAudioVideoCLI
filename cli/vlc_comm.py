@@ -9,6 +9,7 @@ from util import send_until_writable, wait_until_error
 PORT = 1234
 # send_signal = True
 
+
 class VLCplayer():  # Class that manages the VLC player instance on the machine.
 
     def __init__(self, port=PORT, sub=None):
@@ -117,8 +118,8 @@ def on_duration(match, state, server):
 
 def on_start(match, state, server):
     if 'is_playing' not in state:
-        state['is_playing'] = True    
-        state['position'] = 0.0    
+        state['is_playing'] = True
+        state['position'] = 0.0
         state['last_updated'] = time.time()
 
 
@@ -129,10 +130,10 @@ def on_stop(match, state, server):
         del state['title']
     except:
         print("No title found")
-    
+
     state['position'] = 0.0
     state['last_updated'] = time.time()
-    print('at beginning',match)
+    print('at beginning', match)
 
 
 def on_play(match, state, server):
@@ -153,21 +154,27 @@ def on_pause(match, state, server):
 
 
 def on_seek(match, state, server):
-    match = match.groups()[0]
-    if ('i_pos' in match):
+    match = match.groups()[0] or match.groups()[1]
+    if 'i_pos' in match:
         # Match is the absolute duratoin
         match = match.split('=')[1].strip()
         state['position'] = float(match)/1000000.0
         state['last_updated'] = time.time()
-        
 
     # This is used when seek occurs through the slider
-    else:
+    elif '%' in match:
         # Match is the percentage of the total duration
         match = match[:-1]
         state['position'] = float(
             match)*float(state['duration'])/100000.0
         state['last_updated'] = time.time()
+
+    # this is for mp4 files
+    else:
+        print(int(match), match)
+        state['position'] = int(match)/1000
+        state['last_updated'] = time.time()
+
     # print('seeked to ',state['position'])
     server.send('seek', state)
 
@@ -183,10 +190,10 @@ def get_regex_match(line):
 REGEX_DICT = {
     "Title=(.*)$": on_title,
     "Duration=(.*)$": on_duration,
-    "seek request to (.*)%*$": on_seek,
+    "seek request to (.*)%*$|gives (\d*)ms": on_seek,
     "toggling resume$": on_pause,
     "toggling pause$": on_play,
-    "pts: 0": on_start,
+    "xspf' successfully opened": on_start,
     "dead input": on_stop,
 }
 
@@ -209,6 +216,7 @@ def parse_logs(player, server):
 
         regex, match = get_regex_match(line)
         if match:
+            print(regex)
             REGEX_DICT[regex](match, state, server)
 
         # Dump the parsed data into cache

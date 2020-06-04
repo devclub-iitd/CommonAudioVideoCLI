@@ -1,6 +1,7 @@
 import argparse
 from audio_extract import extract
 import time
+import os
 from multiprocessing import Process, Pool
 from multiprocessing.managers import BaseManager
 from itertools import product
@@ -55,6 +56,10 @@ def convert_async():    # Converts video files to audio files asynchronously usi
 
 
 if __name__ == "__main__":
+    if os.path.exists('cache'):
+        print('deleting cache')
+        os.remove('cache')
+
     args = parse()
     # audio_files = convert_async()
     print(args.onlyHost)
@@ -76,7 +81,8 @@ if __name__ == "__main__":
         except:
             title=getRandomString(10)
         
-        # server.upload(getRandomString(5),audio_files[i])
+        name = getRandomString(5)
+        # server.upload(name,audio_files[i])
         server.create_room(title,args.onlyHost)
         
         
