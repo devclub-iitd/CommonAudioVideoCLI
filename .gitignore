@@ -133,3 +133,5 @@ dmypy.json
 .gitsecret/keys/random_seed
 !*.secret
 cli/cache
+cache
+invite_link.svg

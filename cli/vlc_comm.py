@@ -1,5 +1,4 @@
 import socket
-# import sys
 import subprocess
 import time
 import re
@@ -98,6 +97,7 @@ class VLCplayer():  # Class that manages the VLC player instance on the machine.
 
 
 def on_title(match, state, server):
+    print("Found title!")
     state['title'] = match.groups()[0]
 
 
@@ -107,17 +107,24 @@ def on_duration(match, state, server):
 
 
 def on_start(match, state, server):
-    state['position'] = 0.0
-    state['is_playing'] = True
-    state['last_updated'] = time.time()
+    if 'is_playing' not in state:
+        state['is_playing'] = True
+        state['position'] = 0.0
+        state['last_updated'] = time.time()
 
 
 def on_stop(match, state, server):
     state['is_playing'] = False
     del state['duration']
-    del state['title']
+    try:
+        del state['title']
+    except Exception as e:
+        if(e or not e):
+            print("No title found")
+
     state['position'] = 0.0
     state['last_updated'] = time.time()
+    # print('at beginning', match)
 
 
 def on_play(match, state, server):
@@ -125,6 +132,7 @@ def on_play(match, state, server):
         state['is_playing'] = True
         state['last_updated'] = time.time()
         server.send('play', state)
+        # print(match)
 
 
 def on_pause(match, state, server):
@@ -137,20 +145,28 @@ def on_pause(match, state, server):
 
 
 def on_seek(match, state, server):
-    match = match.groups()[0]
-    if ('i_pos' in match):
+    match = match.groups()[0] or match.groups()[1]
+    if 'i_pos' in match:
         # Match is the absolute duratoin
         match = match.split('=')[1].strip()
         state['position'] = float(match)/1000000.0
         state['last_updated'] = time.time()
 
     # This is used when seek occurs through the slider
-    else:
+    elif '%' in match:
         # Match is the percentage of the total duration
         match = match[:-1]
         state['position'] = float(
             match)*float(state['duration'])/100000.0
         state['last_updated'] = time.time()
+
+    # this is for mp4 files
+    else:
+        # print(int(match), match)
+        state['position'] = int(match)/1000
+        state['last_updated'] = time.time()
+
+    # print('seeked to ',state['position'])
     server.send('seek', state)
 
 
@@ -165,10 +181,10 @@ def get_regex_match(line):
 REGEX_DICT = {
     "Title=(.*)$": on_title,
     "Duration=(.*)$": on_duration,
-    "seek request to (.*)%*$": on_seek,
+    "seek request to (.*)%*$|gives ([0-9]*)ms": on_seek,
     "toggling resume$": on_pause,
     "toggling pause$": on_play,
-    "pts: 0": on_start,
+    "xspf' successfully opened": on_start,
     "dead input": on_stop,
 }
 
@@ -191,6 +207,7 @@ def parse_logs(player, server):
 
         regex, match = get_regex_match(line)
         if match:
+            # print(regex)
             REGEX_DICT[regex](match, state, server)
 
         # Dump the parsed data into cache
