@@ -95,10 +95,8 @@ if __name__ == '__main__':
             if(e or not e):
                 title = getRandomString(10)
 
-        # name = getRandomString(5)
-        # server.upload(name,audio_files[i])
-
-        server.create_room(title, args.onlyHost)
+        audioPath = '/home/saptarshi/Downloads/mhaop.mp3'
+        server.create_room(title, audioPath, args.onlyHost)
 
     # To do --> Add support for changing items in playlist.
 
