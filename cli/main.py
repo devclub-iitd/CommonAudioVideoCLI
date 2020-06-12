@@ -52,7 +52,8 @@ def convert_async():
         args.f, [args.q]), callback=files.extend)
 
     p.wait()
-    print(f"Completed extraction of {len(args.f)} files in {time.perf_counter()-st} seconds")
+    print(
+        f"Completed extraction of {len(args.f)} files in {time.perf_counter()-st} seconds")
     return files
 
 ######################################
@@ -95,8 +96,15 @@ if __name__ == '__main__':
             if(e or not e):
                 title = getRandomString(10)
 
-        audioPath = '/home/saptarshi/Downloads/mhaop.mp3'
-        server.create_room(title, audioPath, args.onlyHost)
+        if args.web:
+            name = getRandomString(5)
+            # server.upload(name,audio_files[i])
+            # server.upload(name,'/home/saptarshi/Downloads/mhaop.mp3')
+        else:
+            audioPath = '/home/saptarshi/Downloads/mhaop.mp3'  # modify
+            server.addAudioPath(audioPath)
+
+        server.create_room(title, args.onlyHost, args.web)
 
     # To do --> Add support for changing items in playlist.
 
