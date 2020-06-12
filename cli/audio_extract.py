@@ -1,5 +1,6 @@
 import ffmpeg
 import sys
+import os
 
 BITRATE = 1000*16
 
@@ -24,6 +25,9 @@ def extract(path, quality="medium"):
     try:
         file = ffmpeg.input(path)
         output_path = path[:-3]+"ogg"
+        if(os.path.exists(output_path)):
+            print(f"Audio file {output_path} already exists")
+            return output_path
         print("Extracting audio for file %s" % (path))
         file.audio.output(output_path, acodec='libvorbis',
                           audio_bitrate=BITRATE*get_multiplier(quality), loglevel=0).run()

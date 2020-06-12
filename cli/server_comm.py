@@ -59,11 +59,12 @@ class ServerConnection():
     def __init__(self):
         self.sio = socketio.Client()
         self.sio.connect('http://localhost:5000')
-
+        from main import parse
+        self.args = parse()
         # For testing purposes...
         self.trackId = '5ed554389cd979784f6926e3'   # Bella-Caio
         # self.trackId = '5ed88aae25f4787bea4cc07f'     # Dark
-        self.trackId = '5ee350d3c67ae85cae6f669c'    # mha op
+        # self.trackId = '5ee350d3c67ae85cae6f669c'    # mha op
 
     def send(self,  signal,  data):
         """ Used to send data to the server with a corresponding signal"""
@@ -76,15 +77,14 @@ class ServerConnection():
         self.signals.bind()
         self.sio.register_namespace(self.signals)
 
-    def create_room(self, title, onlyHost, web):
-        print(web, self.trackId)
-        if web:
+    def create_room(self, title):
+        if self.args.web:
             print('track Id is ', self.trackId)
             self.send('createRoom', {
-                      'title': title, 'trackId': self.trackId, 'onlyHost': onlyHost})
+                      'title': title, 'trackId': self.trackId, 'onlyHost': self.args.onlyHost})
         else:
             self.send('createRoom', {
-                      'title': title, 'audioPath': self.audioPath, 'onlyHost': onlyHost})
+                      'title': title, 'audioPath': self.audioPath, 'onlyHost': self.args.onlyHost})
 
     def upload(self,  fileName,  path):
         """ Uploads audio file to the webserver """
