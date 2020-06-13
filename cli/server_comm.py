@@ -2,7 +2,7 @@ import socketio
 import time
 import psutil
 
-SERVER_ADDR = "http://localhost:5000"
+SERVER_ADDR = "localhost"
 
 
 # this is used internally by ServerConnection
@@ -42,13 +42,17 @@ class VLC_signals(socketio.ClientNamespace):
 
     def on_createRoom(self, *args,  **kwargs):
         self.roomId = args[0]['roomId']
-
-        addrs = psutil.net_if_addrs()
-        local_addr = addrs['wlp3s0'][0].address       # modify
-        url = f"http://{local_addr}:5000/client/stream/?roomId={self.roomId}"
-        print(f"Please visit {url}")
         from main import parse
-        if(parse().qr):
+        args = parse()
+        url = "http://%s:5000/client/stream/?roomId=%s"
+        if(args.web):
+            url = url % (SERVER_ADDR, self.roomId)
+        else:
+            addrs = psutil.net_if_addrs()
+            local_addr = addrs['wlp3s0'][0].address       # modify
+            url = url % (local_addr, self.roomId)
+        print(f"Please visit {url}")
+        if(args.qr):
             from util import print_qr
             print("Or scan the QR code given below")
             print_qr(url)
