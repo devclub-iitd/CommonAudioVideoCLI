@@ -151,13 +151,12 @@ def play():
         if(not server.get()):
             bash_command.append('--web')
 
-        bash_command.append('--audio-quality')
         quality = audio_quality.get()
         if(quality == 0):
+            bash_command.append('--audio-quality')
             bash_command.append('low')
-        elif(quality == 1):
-            bash_command.append('medium')
         elif(quality == 2):
+            bash_command.append('--audio-quality')
             bash_command.append('high')
         '''
         if(show_qr.get()):
@@ -174,8 +173,6 @@ def play():
         tkinter.messagebox.showerror("ERROR", "No video file chosen")
     elif(err_status == 2):
         tkinter.messagebox.showerror("ERROR", "No subtitle file chosen")
-    else:
-        tkinter.messagebox.showerror("ERROR", "An error occurred")
 
 
 def on_closing():
