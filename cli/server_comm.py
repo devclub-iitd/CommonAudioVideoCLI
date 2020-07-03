@@ -1,6 +1,8 @@
 import socketio
 import time
-SERVER_ADDR = "http://localhost:5000"
+import psutil
+
+SERVER_ADDR = "localhost"
 
 
 # this is used internally by ServerConnection
@@ -35,14 +37,22 @@ class VLC_signals(socketio.ClientNamespace):
     def on_seek(self,  *args,  **kwargs):
         state = args[0]
         print("Seek signal recieved with the following data", state)
-        self.player.seek(int(time.time() - state['last_updated'] + state['position']))
+        self.player.seek(
+            int(time.time() - state['last_updated'] + state['position']))
 
     def on_createRoom(self, *args,  **kwargs):
         self.roomId = args[0]['roomId']
-        url = f"http://localhost:5000/client/stream/?roomId={self.roomId}"
-        print(f"Please visit {url}")
         from main import parse
-        if(parse().qr):
+        args = parse()
+        url = "http://%s:5000/client/stream/?roomId=%s"
+        if(args.web):
+            url = url % (SERVER_ADDR, self.roomId)
+        else:
+            addrs = psutil.net_if_addrs()
+            local_addr = addrs['wlp3s0'][0].address       # modify
+            url = url % (local_addr, self.roomId)
+        print(f"Please visit {url}")
+        if(args.qr):
             from util import print_qr
             print("Or scan the QR code given below")
             print_qr(url)
@@ -53,10 +63,12 @@ class ServerConnection():
     def __init__(self):
         self.sio = socketio.Client()
         self.sio.connect('http://localhost:5000')
-
+        from main import parse
+        self.args = parse()
         # For testing purposes...
         self.trackId = '5ed554389cd979784f6926e3'   # Bella-Caio
         # self.trackId = '5ed88aae25f4787bea4cc07f'     # Dark
+        # self.trackId = '5ee350d3c67ae85cae6f669c'    # mha op
 
     def send(self,  signal,  data):
         """ Used to send data to the server with a corresponding signal"""
@@ -69,8 +81,14 @@ class ServerConnection():
         self.signals.bind()
         self.sio.register_namespace(self.signals)
 
-    def create_room(self, title, onlyHost):
-        self.send('createRoom', {'title': title, 'trackId': self.trackId, 'onlyHost': onlyHost})
+    def create_room(self, title):
+        if self.args.web:
+            print('track Id is ', self.trackId)
+            self.send('createRoom', {
+                      'title': title, 'trackId': self.trackId, 'onlyHost': self.args.onlyHost})
+        else:
+            self.send('createRoom', {
+                      'title': title, 'audioPath': self.audioPath, 'onlyHost': self.args.onlyHost})
 
     def upload(self,  fileName,  path):
         """ Uploads audio file to the webserver """
@@ -81,3 +99,6 @@ class ServerConnection():
         r = requests.post(url=url, files=files, data={"title": fileName})
         print(r.json())
         self.trackId = r.json()['trackId']
+
+    def addAudioPath(self, audioPath):
+        self.audioPath = audioPath
