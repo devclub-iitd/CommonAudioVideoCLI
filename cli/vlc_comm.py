@@ -7,7 +7,6 @@ from util import send_until_writable, wait_until_error
 
 PORT = 1234
 
-
 class VLCplayer():  # Class that manages the VLC player instance on the machine.
 
     def __init__(self, port=PORT, sub=None):
