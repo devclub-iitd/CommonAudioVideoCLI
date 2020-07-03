@@ -51,7 +51,8 @@ class VLC_signals(socketio.ClientNamespace):
             addrs = psutil.net_if_addrs()
             local_addr = addrs['wlp3s0'][0].address       # modify
             url = url % (local_addr, self.roomId)
-        print(f"Please visit {url}")
+        from util import print_url
+        print_url(url)
         if(args.qr):
             from util import print_qr
             print("Or scan the QR code given below")

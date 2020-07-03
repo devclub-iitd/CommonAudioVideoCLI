@@ -34,12 +34,21 @@ def send_until_writable(timeout=0.5):
 def check_writable(socket):
     """ Checks whether the socket is writable """
 
-    a, writable, b = select([], [socket], [], 60)
+    _, writable, _ = select([], [socket], [], 60)
     return writable == [socket]
 
 
+def print_url(url):
+    """ Makes a txt file with the URL that is received from the server for the GUI app. """
+
+    print(f"Please visit {url}")
+    f = open("invite_link.txt", 'w')
+    f.write(url)
+    f.close()
+
+
 def print_qr(url):
-    """ Prints a QR code using the URL that we recieved from the server. """
+    """ Prints a QR code using the URL that we received from the server. """
 
     image = pyqrcode.create(url)
     image.svg('invite_link.svg', scale=1)
@@ -50,6 +59,6 @@ def getRandomString(length):
 
     charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
     out = ""
-    for i in range(length):
+    for _ in range(length):
         out += charset[random.randint(0, len(charset)-1)]
     return out
