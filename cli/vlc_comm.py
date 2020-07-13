@@ -78,7 +78,7 @@ class VLCplayer():  # Class that manages the VLC player instance on the machine.
         parse_logs(self, server)
 
     def getState(self):
-        """ Interprets the meaning of the dumped data in cache
+        """ Interprets the dumped data in cache
         by calculating the live position of the video from the last_updated
         and postition keys in the data. It returns the live state of the video """
 

@@ -81,9 +81,16 @@ class ServerConnection():
         self.signals.bind()
         self.sio.register_namespace(self.signals)
 
+    def add_track(self,title):
+        if self.args.web:
+            self.send('addTrack', {
+                      'title': title, 'trackId': self.trackId, 'onlyHost': self.args.onlyHost})
+        else:
+            self.send('addTrack', {
+                      'title': title, 'audioPath': self.audioPath, 'onlyHost': self.args.onlyHost})
+
     def create_room(self, title):
         if self.args.web:
-            print('track Id is ', self.trackId)
             self.send('createRoom', {
                       'title': title, 'trackId': self.trackId, 'onlyHost': self.args.onlyHost})
         else:
