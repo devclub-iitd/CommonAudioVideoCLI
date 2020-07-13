@@ -10,7 +10,7 @@ def wait_until_error(f, timeout=0.5):
 
     def inner(*args, **kwargs):
         st = time.perf_counter()
-        while(time.perf_counter() - st < timeout):
+        while(time.perf_counter() - st < timeout or timeout < 0):
             try:
                 return f(*args, **kwargs)
             except Exception as e:

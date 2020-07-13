@@ -94,7 +94,7 @@ class ServerConnection():
         """ Uploads audio file to the webserver """
         print("Uploading to server")
         import requests
-        url = f"{SERVER_ADDR}/api/upload/"
+        url = f"http://{SERVER_ADDR}:5000/api/upload/"
         files = {'file': (fileName,  open(path,  'rb'),  'audio/ogg')}
         r = requests.post(url=url, files=files, data={"title": fileName})
         print(r.json())

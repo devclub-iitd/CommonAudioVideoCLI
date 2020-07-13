@@ -4,14 +4,14 @@ import time
 import re
 import json
 from util import send_until_writable, wait_until_error
+import os
 
 PORT = 1234
 
 
 class VLCplayer():  # Class that manages the VLC player instance on the machine.
 
-    def __init__(self, port=PORT, sub=None):
-        self.sub = sub
+    def __init__(self, port=PORT):
         self.port = port
         self.proc = None
 
@@ -21,13 +21,13 @@ class VLCplayer():  # Class that manages the VLC player instance on the machine.
 
         return json.loads(open('cache', 'r').read())
 
-    def launch(self):
+    def launch(self,sub):
         """ Launches a VLC instance """
 
         bashCommand = 'vlc --extraintf rc --rc-host localhost:%d -vv' % (
             self.port)
-        if(self.sub is not None):
-            bashCommand += " --sub-file %s" % (self.sub)
+        if(sub is not None and os.path.exists(sub)):
+            bashCommand += " --sub-file %s" % (sub)
 
         # Start a subprocess to execute the VLC command
         self.proc = subprocess.Popen(bashCommand.split(
@@ -36,10 +36,10 @@ class VLCplayer():  # Class that manages the VLC player instance on the machine.
         # Create a socket connection to the RC interface of VLC that is listening for commands at localhost:1234
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server_address = ('localhost', self.port)
-        wait_until_error(self.sock.connect, timeout=5)(self.server_address)
+        wait_until_error(self.sock.connect, timeout=-1)(self.server_address)
 
         # Dump any trash data like welcome message that we may recieve from the server after connecting
-        self.sock.recv(1024)
+        print(self.sock.recv(1024))
 
     """ The following functions send a specific command to the VLC instance using the socket connection """
 
@@ -79,8 +79,8 @@ class VLCplayer():  # Class that manages the VLC player instance on the machine.
 
     def getState(self):
         """ Interprets the meaning of the dumped data in cache
-        by calculating the live position of the video from the last_updated and postition keys
-        in the data. It returns the live state of the video """
+        by calculating the live position of the video from the last_updated
+        and postition keys in the data. It returns the live state of the video """
 
         player = self
         state = player.readState()
@@ -207,11 +207,9 @@ def parse_logs(player, server):
 
         regex, match = get_regex_match(line)
         if match:
-            # print(regex)
             REGEX_DICT[regex](match, state, server)
 
         # Dump the parsed data into cache
         open('cache', 'w').write(json.dumps(state))
-
 
 player = VLCplayer()

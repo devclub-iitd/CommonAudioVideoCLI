@@ -122,7 +122,8 @@ if __name__ == '__main__':
                 title = getRandomString(10)
 
         if args.web:
-            server.upload(title, audio_files[i])
+            # server.upload(title, audio_files[i])
+            pass
         else:
             server.addAudioPath(audio_files[i])
 
