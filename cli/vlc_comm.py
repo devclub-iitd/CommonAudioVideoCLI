@@ -4,6 +4,7 @@ import time
 import re
 import json
 from util import send_until_writable, wait_until_error
+from audio_extract import get_duration
 import os
 
 PORT = 1234
@@ -96,31 +97,28 @@ class VLCplayer():  # Class that manages the VLC player instance on the machine.
             return state
 
 
-def on_title(match, state, server):
-    print("Found title!")
-    state['title'] = match.groups()[0]
-
-
-def on_duration(match, state, server):
-    if 'duration' not in state.keys():
-        state['duration'] = match.groups()[0]
-
-
 def on_start(match, state, server):
-    if 'is_playing' not in state:
-        state['is_playing'] = True
-        state['position'] = 0.0
-        state['last_updated'] = time.time()
+    file = match.groups()[0]
+    server.track_change(file)
+
+    state['path'] = file
+    state['duration'] = get_duration(file)*1000
+    state['is_playing'] = True
+    state['position'] = 0.0
+    state['last_updated'] = time.time()
 
 
 def on_stop(match, state, server):
     state['is_playing'] = False
-    del state['duration']
     try:
-        del state['title']
+        del state['duration']
+    except:
+        print("No duration found")
+    
+    try:
+        del state['path']
     except Exception as e:
-        if(e or not e):
-            print("No title found")
+        print("No path found")
 
     state['position'] = 0.0
     state['last_updated'] = time.time()
@@ -165,7 +163,6 @@ def on_seek(match, state, server):
         # print(int(match), match)
         state['position'] = int(match)/1000
         state['last_updated'] = time.time()
-
     # print('seeked to ',state['position'])
     server.send('seek', state)
 
@@ -179,12 +176,10 @@ def get_regex_match(line):
 
 
 REGEX_DICT = {
-    "Title=(.*)$": on_title,
-    "Duration=(.*)$": on_duration,
     "seek request to (.*)%*$|gives ([0-9]*)ms": on_seek,
     "toggling resume$": on_pause,
     "toggling pause$": on_play,
-    "xspf' successfully opened": on_start,
+    "main input debug: `file://(.*)' successfully opened": on_start,
     "dead input": on_stop,
 }
 

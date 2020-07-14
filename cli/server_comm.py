@@ -2,6 +2,8 @@ import socketio
 import time
 import psutil
 
+from util import path2title
+
 SERVER_ADDR = "localhost"
 
 
@@ -63,10 +65,13 @@ class ServerConnection():
     def __init__(self):
         self.sio = socketio.Client()
         self.sio.connect('http://localhost:5000')
+        self.tracks = {}
+
         from main import parse
         self.args = parse()
+
         # For testing purposes...
-        self.trackId = '5ed554389cd979784f6926e3'   # Bella-Caio
+        # self.trackId = '5ed554389cd979784f6926e3'   # Bella-Caio
         # self.trackId = '5ed88aae25f4787bea4cc07f'     # Dark
         # self.trackId = '5ee350d3c67ae85cae6f669c'    # mha op
 
@@ -81,31 +86,39 @@ class ServerConnection():
         self.signals.bind()
         self.sio.register_namespace(self.signals)
 
+    def track_change(self,file):
+        title = path2title(file)
+        print("Sending track change signal for file ", file)
+        if(self.args.web):
+            self.send('changeTrack',{'trackId':self.tracks[title]['trackId']})
+        else:
+            self.send('changeTrack',{'audioPath':self.tracks[title]['audioPath']})
+
     def add_track(self,title):
         if self.args.web:
             self.send('addTrack', {
-                      'title': title, 'trackId': self.trackId, 'onlyHost': self.args.onlyHost})
+                      'title': title, 'trackId': self.tracks[title]['trackId'], 'onlyHost': self.args.onlyHost})
         else:
             self.send('addTrack', {
-                      'title': title, 'audioPath': self.audioPath, 'onlyHost': self.args.onlyHost})
+                      'title': title, 'audioPath': self.tracks[title]['audioPath'], 'onlyHost': self.args.onlyHost})
 
     def create_room(self, title):
         if self.args.web:
             self.send('createRoom', {
-                      'title': title, 'trackId': self.trackId, 'onlyHost': self.args.onlyHost})
+                      'title': title, 'trackId': self.tracks[title]['trackId'], 'onlyHost': self.args.onlyHost})
         else:
             self.send('createRoom', {
-                      'title': title, 'audioPath': self.audioPath, 'onlyHost': self.args.onlyHost})
+                      'title': title, 'audioPath': self.tracks[title]['audioPath'], 'onlyHost': self.args.onlyHost})
 
-    def upload(self,  fileName,  path):
+    def upload(self,  title,  path):
         """ Uploads audio file to the webserver """
         print("Uploading to server")
         import requests
         url = f"http://{SERVER_ADDR}:5000/api/upload/"
-        files = {'file': (fileName,  open(path,  'rb'),  'audio/ogg')}
-        r = requests.post(url=url, files=files, data={"title": fileName})
+        files = {'file': (title,  open(path,  'rb'),  'audio/ogg')}
+        r = requests.post(url=url, files=files, data={"title": title})
         print(r.json())
-        self.trackId = r.json()['trackId']
+        self.tracks[title]= {"trackId" : r.json()['trackId']}
 
-    def addAudioPath(self, audioPath):
-        self.audioPath = audioPath
+    def addAudioPath(self, title, audioPath):
+        self.tracks[title] = {"audioPath":audioPath}

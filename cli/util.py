@@ -4,6 +4,7 @@ from select import select
 import pyqrcode
 import random
 
+SUPPORTED_FORMATS = ['mkv','mp4']
 
 def wait_until_error(f, timeout=0.5):
     """ Wait for timeout seconds until the function stops throwing any errors. """
@@ -46,17 +47,9 @@ def print_qr(url):
     print(image.terminal(quiet_zone=1))
 
 
-def getRandomString(length):
-
-    charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-    out = ""
-    for i in range(length):
-        out += charset[random.randint(0, len(charset)-1)]
-    return out
-
 def get_videos(path):
     if(os.path.isfile(path)):
-        if (path[-3:] in ['mkv','mp4']):
+        if (path[-3:] in SUPPORTED_FORMATS):
             return [path]
         return []
     if(os.path.isdir(path)):
@@ -64,3 +57,6 @@ def get_videos(path):
         for file in os.listdir(path):
             ans.extend(get_videos(path+'/'+file))
         return ans
+
+def path2title(path):
+    return path.split('/')[-1:][0].split('.')[0]

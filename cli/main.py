@@ -10,7 +10,7 @@ from itertools import product
 
 from server_comm import ServerConnection
 from vlc_comm import player
-from util import get_videos
+from util import get_videos, path2title
 from audio_extract import extract
 
 
@@ -66,6 +66,7 @@ def exitHandler(*args, **kwargs):
                 # print("Cleared Cache")
             pass
     os.system("killall node 2> /dev/null")
+    os.system("killall npm 2> /dev/null")
     sys.exit(0)
 
 
@@ -96,6 +97,8 @@ def spawn_server():
         if(b'npm ERR!' in line):
             print(line)
             print("An error has occured while starting the server\nRestarting the server")
+            os.system('killall node')
+            os.system('killall npm')
             sys.exit(-1)
         if(b'Press CTRL-C to stop' in line):
             break
@@ -104,14 +107,15 @@ def initialize(videos,server,first=False):
     audio = convert_async(videos)
 
     for video in videos:
-        player.enqueue(video)
 
-        title = video.split('/')[-2:-1][0].split('.')[0]
+        title = path2title(video)
         if args.web:
             server.upload(title, video[:-3]+"ogg")
         else:
-            server.addAudioPath(video[:-3]+"ogg")
+            server.addAudioPath(title, video[:-3]+"ogg")
 
+        player.enqueue(video)
+        
         if(first):
             server.create_room(title=title)
             player.play()
@@ -121,6 +125,7 @@ def initialize(videos,server,first=False):
         else:
             server.add_track(title=title)
 
+        
 
 if __name__ == '__main__':
 
