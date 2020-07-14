@@ -10,7 +10,7 @@ from itertools import product
 
 from server_comm import ServerConnection
 from vlc_comm import player
-from util import getRandomString
+from util import get_videos
 from audio_extract import extract
 
 
@@ -19,7 +19,7 @@ def parse():
     group = parser.add_mutually_exclusive_group()
 
     parser.add_argument('-f', '--file', required=True, dest="f",
-                        help="Path to video file", type=str, action="append")
+                        help="Path to video files or directory containing video files", type=str, action="append")
     parser.add_argument('-s', '--sub', dest="sub",
                         help="Load subtitle File", type=str, action="store")
     parser.add_argument(
@@ -33,9 +33,11 @@ def parse():
     group.add_argument('--web', help="Force routing through a web server",
                        dest="web", action="store_true")
     args = parser.parse_args()
+    videos = []
     for i in range(len(args.f)):
         args.f[i] = os.path.abspath(args.f[i])
-
+        videos.extend(get_videos(args.f[i]))
+    args.f = videos
     return args
 
 

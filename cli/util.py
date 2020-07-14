@@ -1,5 +1,5 @@
 import time
-# import socket
+import os
 from select import select
 import pyqrcode
 import random
@@ -53,3 +53,14 @@ def getRandomString(length):
     for i in range(length):
         out += charset[random.randint(0, len(charset)-1)]
     return out
+
+def get_videos(path):
+    if(os.path.isfile(path)):
+        if (path[-3:] in ['mkv','mp4']):
+            return [path]
+        return []
+    if(os.path.isdir(path)):
+        ans = []
+        for file in os.listdir(path):
+            ans.extend(get_videos(path+'/'+file))
+        return ans
