@@ -3,7 +3,7 @@ import subprocess
 import time
 import re
 import json
-from util import send_until_writable, wait_until_error
+from util import send_until_writable, wait_until_error, path2title
 from audio_extract import get_duration
 import os
 
@@ -101,6 +101,7 @@ def on_start(match, state, server):
     server.track_change(videoPath=file)
 
     state['path'] = file
+    state['title'] = path2title(file)
     state['duration'] = get_duration(file)*1000
     state['is_playing'] = True
     state['position'] = 0.0
@@ -115,6 +116,7 @@ def on_stop(match, state, server):
         print("No duration found")
     try:
         del state['path']
+        del state['title']
     except:
         print("No path found")
 

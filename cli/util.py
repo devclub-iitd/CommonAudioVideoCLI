@@ -2,7 +2,8 @@ import time
 import os
 from select import select
 import pyqrcode
-import random
+import subprocess
+import re
 
 SUPPORTED_FORMATS = ['mkv','mp4']
 
@@ -69,3 +70,20 @@ def get_videos(path):
 
 def path2title(path):
     return path.split('/')[-1:][0].split('.')[0]
+
+def get_interface():
+    arp_details = subprocess.Popen('arp -a'.split(),stdout=subprocess.PIPE).communicate()
+    arp_details = arp_details[0].decode().split('\n')[:-1]
+
+    intf = None
+    for detail in arp_details:
+        match = re.search('on (.*)$',detail)
+        if(match is not None):
+            new_intf = match.groups()[0]
+            if(intf is not None and intf != new_intf):
+                return input("[+] Enter the interface to use: ")
+            intf = new_intf
+    if (intf is None):
+        return input("[+] Enter the interface to use: ")
+    
+    return intf

@@ -2,7 +2,7 @@ import socketio
 import time
 import psutil
 
-from util import path2title
+from util import path2title, get_interface
 
 SERVER_ADDR = "localhost"
 
@@ -51,7 +51,8 @@ class VLC_signals(socketio.ClientNamespace):
             url = url % (SERVER_ADDR, self.roomId)
         else:
             addrs = psutil.net_if_addrs()
-            local_addr = addrs['wlp3s0'][0].address       # modify
+            interface = get_interface()
+            local_addr = addrs[interface][0].address       # modify
             url = url % (local_addr, self.roomId)
         from util import print_url
         print_url(url)
