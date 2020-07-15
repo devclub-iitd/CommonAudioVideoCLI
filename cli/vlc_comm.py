@@ -3,15 +3,15 @@ import subprocess
 import time
 import re
 import json
-from util import send_until_writable, wait_until_error
+from util import send_until_writable, wait_until_error, path2title
+from audio_extract import get_duration
+import os
 
 PORT = 1234
 
-
 class VLCplayer():  # Class that manages the VLC player instance on the machine.
 
-    def __init__(self, port=PORT, sub=None):
-        self.sub = sub
+    def __init__(self, port=PORT):
         self.port = port
         self.proc = None
 
@@ -21,13 +21,13 @@ class VLCplayer():  # Class that manages the VLC player instance on the machine.
 
         return json.loads(open('cache', 'r').read())
 
-    def launch(self):
+    def launch(self,sub):
         """ Launches a VLC instance """
 
         bashCommand = 'vlc --extraintf rc --rc-host localhost:%d -vv' % (
             self.port)
-        if(self.sub is not None):
-            bashCommand += " --sub-file %s" % (self.sub)
+        if(sub is not None and os.path.exists(sub)):
+            bashCommand += " --sub-file %s" % (sub)
 
         # Start a subprocess to execute the VLC command
         self.proc = subprocess.Popen(bashCommand.split(
@@ -36,7 +36,7 @@ class VLCplayer():  # Class that manages the VLC player instance on the machine.
         # Create a socket connection to the RC interface of VLC that is listening for commands at localhost:1234
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server_address = ('localhost', self.port)
-        wait_until_error(self.sock.connect, timeout=5)(self.server_address)
+        wait_until_error(self.sock.connect, timeout=-1)(self.server_address)
 
         # Dump any trash data like welcome message that we may recieve from the server after connecting
         self.sock.recv(1024)
@@ -78,9 +78,9 @@ class VLCplayer():  # Class that manages the VLC player instance on the machine.
         parse_logs(self, server)
 
     def getState(self):
-        """ Interprets the meaning of the dumped data in cache
-        by calculating the live position of the video from the last_updated and postition keys
-        in the data. It returns the live state of the video """
+        """ Interprets the dumped data in cache
+        by calculating the live position of the video from the last_updated
+        and postition keys in the data. It returns the live state of the video """
 
         player = self
         state = player.readState()
@@ -96,35 +96,32 @@ class VLCplayer():  # Class that manages the VLC player instance on the machine.
             return state
 
 
-def on_title(match, state, server):
-    print("Found title!")
-    state['title'] = match.groups()[0]
-
-
-def on_duration(match, state, server):
-    if 'duration' not in state.keys():
-        state['duration'] = match.groups()[0]
-
-
 def on_start(match, state, server):
-    if 'is_playing' not in state:
-        state['is_playing'] = True
-        state['position'] = 0.0
-        state['last_updated'] = time.time()
+    file = match.groups()[0]
+    server.track_change(videoPath=file)
+
+    state['path'] = file
+    state['title'] = path2title(file)
+    state['duration'] = get_duration(file)*1000
+    state['is_playing'] = True
+    state['position'] = 0.0
+    state['last_updated'] = time.time()
 
 
 def on_stop(match, state, server):
     state['is_playing'] = False
-    del state['duration']
     try:
+        del state['duration']
+    except:
+        print("No duration found")
+    try:
+        del state['path']
         del state['title']
-    except Exception as e:
-        if(e or not e):
-            print("No title found")
+    except:
+        print("No path found")
 
     state['position'] = 0.0
     state['last_updated'] = time.time()
-    # print('at beginning', match)
 
 
 def on_play(match, state, server):
@@ -132,7 +129,6 @@ def on_play(match, state, server):
         state['is_playing'] = True
         state['last_updated'] = time.time()
         server.send('play', state)
-        # print(match)
 
 
 def on_pause(match, state, server):
@@ -162,11 +158,8 @@ def on_seek(match, state, server):
 
     # this is for mp4 files
     else:
-        # print(int(match), match)
         state['position'] = int(match)/1000
         state['last_updated'] = time.time()
-
-    # print('seeked to ',state['position'])
     server.send('seek', state)
 
 
@@ -179,12 +172,10 @@ def get_regex_match(line):
 
 
 REGEX_DICT = {
-    "Title=(.*)$": on_title,
-    "Duration=(.*)$": on_duration,
     "seek request to (.*)%*$|gives ([0-9]*)ms": on_seek,
     "toggling resume$": on_pause,
     "toggling pause$": on_play,
-    "xspf' successfully opened": on_start,
+    "main input debug: `file://(.*)' successfully opened": on_start,
     "dead input": on_stop,
 }
 
@@ -207,11 +198,9 @@ def parse_logs(player, server):
 
         regex, match = get_regex_match(line)
         if match:
-            # print(regex)
             REGEX_DICT[regex](match, state, server)
 
         # Dump the parsed data into cache
         open('cache', 'w').write(json.dumps(state))
-
 
 player = VLCplayer()
