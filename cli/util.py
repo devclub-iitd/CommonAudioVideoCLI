@@ -1,16 +1,17 @@
 import time
-# import socket
+import os
 from select import select
 import pyqrcode
 import random
 
+SUPPORTED_FORMATS = ['mkv','mp4']
 
 def wait_until_error(f, timeout=0.5):
     """ Wait for timeout seconds until the function stops throwing any errors. """
 
     def inner(*args, **kwargs):
         st = time.perf_counter()
-        while(time.perf_counter() - st < timeout):
+        while(time.perf_counter() - st < timeout or timeout < 0):
             try:
                 return f(*args, **kwargs)
             except Exception as e:
@@ -55,10 +56,16 @@ def print_qr(url):
     print(image.terminal(quiet_zone=1))
 
 
-def getRandomString(length):
+def get_videos(path):
+    if(os.path.isfile(path)):
+        if (path[-3:] in SUPPORTED_FORMATS):
+            return [path]
+        return []
+    if(os.path.isdir(path)):
+        ans = []
+        for file in os.listdir(path):
+            ans.extend(get_videos(path+'/'+file))
+        return ans
 
-    charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-    out = ""
-    for _ in range(length):
-        out += charset[random.randint(0, len(charset)-1)]
-    return out
+def path2title(path):
+    return path.split('/')[-1:][0].split('.')[0]

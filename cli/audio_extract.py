@@ -1,6 +1,8 @@
 import ffmpeg
 import sys
 import os
+import subprocess
+import re
 
 BITRATE = 1000*16
 
@@ -38,3 +40,10 @@ def extract(path, quality="medium"):
         sys.exit(-1)
 
     return output_path
+
+def get_duration(file):
+    cmd = "ffmpeg -i %s" % file
+    time_str = subprocess.Popen(cmd.split(),stdout=subprocess.PIPE,stderr=subprocess.STDOUT).communicate()
+    time_str = re.search('Duration: (.*), start',time_str[0].decode()).groups()[0]
+    hours, minutes, seconds = time_str.split(':')
+    return int(hours)*3600 + int(minutes)*60 + float(seconds)
