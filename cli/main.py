@@ -57,23 +57,19 @@ def convert_async(paths):
 
 
 def exitHandler(*args, **kwargs):
-    # print("\nExiting now..Goodbye!")
     if(os.path.exists('cache')):
         try:
             os.remove('cache')
-        except Exception as e:
-            # if(e or not e):
-                # print("Cleared Cache")
+        except:
             pass
     os.system("killall node 2> /dev/null")
     os.system("killall npm 2> /dev/null")
     sys.exit(0)
 
 
-SERVER_PATH = '../../CommonAudioVideoServer/'
-
-
 def spawn_server():
+    SERVER_PATH = '../../CommonAudioVideoServer/'
+
     if(not os.path.exists(SERVER_PATH)):
         print("Invalid Server Path, Try reinstalling the package")
         sys.exit(-1)
@@ -108,24 +104,22 @@ def initialize(videos,server,first=False):
 
     for video in videos:
 
-        title = path2title(video)
         if args.web:
-            server.upload(title, video[:-3]+"ogg")
+            server.upload(video, video[:-3]+"ogg")
         else:
-            server.addAudioPath(title, video[:-3]+"ogg")
+            server.addAudioPath(video, video[:-3]+"ogg")
 
         player.enqueue(video)
         
         if(first):
-            server.create_room(title=title)
+            server.create_room(video)
             player.play()
             player.pause()
             player.seek(0)
             
         else:
-            server.add_track(title=title)
+            server.add_track(video)
 
-        
 
 if __name__ == '__main__':
 
@@ -149,8 +143,8 @@ if __name__ == '__main__':
 
     initialize([args.f[0]],server=server,first=True)
 
-    if(len(args.f)>1):
-        Process(target=initialize,kwargs={"videos":args.f[1:],"server":server,"first":False}).run()
+    if len(args.f) > 1:
+        Process(target=initialize, kwargs={"videos":args.f[1:], "server":server, "first":False}).run()
 
 
     while True:

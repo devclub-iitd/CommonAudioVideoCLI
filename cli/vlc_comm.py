@@ -40,7 +40,7 @@ class VLCplayer():  # Class that manages the VLC player instance on the machine.
         wait_until_error(self.sock.connect, timeout=-1)(self.server_address)
 
         # Dump any trash data like welcome message that we may recieve from the server after connecting
-        print(self.sock.recv(1024))
+        self.sock.recv(1024)
 
     """ The following functions send a specific command to the VLC instance using the socket connection """
 
@@ -99,7 +99,7 @@ class VLCplayer():  # Class that manages the VLC player instance on the machine.
 
 def on_start(match, state, server):
     file = match.groups()[0]
-    server.track_change(file)
+    server.track_change(videoPath=file)
 
     state['path'] = file
     state['duration'] = get_duration(file)*1000
@@ -114,15 +114,13 @@ def on_stop(match, state, server):
         del state['duration']
     except:
         print("No duration found")
-    
     try:
         del state['path']
-    except Exception as e:
+    except:
         print("No path found")
 
     state['position'] = 0.0
     state['last_updated'] = time.time()
-    # print('at beginning', match)
 
 
 def on_play(match, state, server):
@@ -130,7 +128,6 @@ def on_play(match, state, server):
         state['is_playing'] = True
         state['last_updated'] = time.time()
         server.send('play', state)
-        # print(match)
 
 
 def on_pause(match, state, server):
@@ -160,10 +157,8 @@ def on_seek(match, state, server):
 
     # this is for mp4 files
     else:
-        # print(int(match), match)
         state['position'] = int(match)/1000
         state['last_updated'] = time.time()
-    # print('seeked to ',state['position'])
     server.send('seek', state)
 
 
