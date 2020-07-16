@@ -6,6 +6,7 @@ import json
 from util import send_until_writable, wait_until_error, path2title
 from audio_extract import get_duration
 import os
+from termcolor import colored
 
 PORT = 1234
 
@@ -98,7 +99,8 @@ class VLCplayer():  # Class that manages the VLC player instance on the machine.
 
 def on_start(match, state, server):
     file = match.groups()[0]
-    server.track_change(videoPath=file)
+    fileFormatted = file.replace('%20', ' ')
+    server.track_change(videoPath=fileFormatted)
 
     state['path'] = file
     state['title'] = path2title(file)
