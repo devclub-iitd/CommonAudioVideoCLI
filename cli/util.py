@@ -4,8 +4,9 @@ from select import select
 import pyqrcode
 import subprocess
 import re
+from magic import Magic
+from audio_extract import convert2mkv
 
-SUPPORTED_FORMATS = ['mkv','mp4']
 
 def wait_until_error(f, timeout=0.5):
     """ Wait for timeout seconds until the function stops throwing any errors. """
@@ -43,7 +44,7 @@ def check_writable(socket):
 def print_url(url):
     """ Makes a txt file with the URL that is received from the server for the GUI app. """
 
-    print(f"Please visit {url}")
+    print(f"\n[#] Please visit {url}")
     f = open("invite_link.txt", 'w')
     f.write(url)
     f.close()
@@ -57,20 +58,32 @@ def print_qr(url):
     print(image.terminal(quiet_zone=1))
 
 
-def get_videos(path):
+def get_videos(path,clear_files):
+    
     if(os.path.isfile(path)):
-        if (path[-3:] in SUPPORTED_FORMATS):
-            return [path]
+        mime = Magic(mime=True).from_file(path)
+        if ("video" in mime):
+            if(mime == "video/x-matroska"):
+                return [path]
+            else:
+                try:
+                    print(f"[+] Converting {path2title(path)} to MKV")
+                    from audio_extract import convert2mkv
+                    new_file = convert2mkv(path)
+                    clear_files.append(new_file)
+                    return [new_file]
+                except Exception as e:
+                    print(e)
+                    return []
         return []
     if(os.path.isdir(path)):
         ans = []
         for file in os.listdir(path):
-            ans.extend(get_videos(path+'/'+file))
+            ans.extend(get_videos(path+'/'+file,clear_files))
         return ans
 
 def path2title(path):
-    return path.split('/')[-1:][0].split('.')[0]
-
+    return path.split('/')[-1:][0]
 def get_interface():
     arp_details = subprocess.Popen('arp -a'.split(),stdout=subprocess.PIPE).communicate()
     arp_details = arp_details[0].decode().split('\n')[:-1]

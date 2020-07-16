@@ -172,7 +172,7 @@ def get_regex_match(line):
 
 
 REGEX_DICT = {
-    "seek request to (.*)%*$|gives ([0-9]*)ms": on_seek,
+    "seek request to (.*)%*$": on_seek,
     "toggling resume$": on_pause,
     "toggling pause$": on_play,
     "main input debug: `file://(.*)' successfully opened": on_start,
