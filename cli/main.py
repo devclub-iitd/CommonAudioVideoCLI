@@ -7,6 +7,7 @@ import subprocess
 from multiprocessing import Process, Pool
 from multiprocessing.managers import BaseManager
 from itertools import product
+from termcolor import colored
 
 from server_comm import ServerConnection, set_vars
 from vlc_comm import player
@@ -51,12 +52,12 @@ def convert_async(paths):
     pool = Pool()
     files = []
     st = time.perf_counter()
-    print("[+] Extraction of audio started ...")
+    print(f"[{colored('+','green')}] Extraction of audio started ...")
     p = pool.starmap_async(extract, product(
         paths, [args.q]), callback=files.extend)
 
     p.wait()
-    print(f"[+] Completed extraction of {len(paths)} file(s) in {time.perf_counter()-st} seconds")
+    print(f"[{colored('+','green')}] Completed extraction of {colored(len(paths),'yellow')} file(s) in {colored(time.perf_counter()-st,'yellow')} seconds")
     return files
 
 
@@ -77,28 +78,28 @@ def spawn_server():
     SERVER_PATH = '../../CommonAudioVideoServer/'
 
     if(not os.path.exists(SERVER_PATH)):
-        print("[-] Invalid Server Path, Try reinstalling the package")
+        print(f"[{colored('-','red')}] Invalid Server Path, Try {colored(reinstalling,'red')} the package")
         sys.exit(-1)
 
     if(not os.path.exists(SERVER_PATH+'node_modules')):
-        print("[+] Configuring the server ..")
+        print(f"[{colored('+','green')}] Configuring the server ..")
         subprocess.Popen('npm install'.split(), stdout=subprocess.DEVNULL,
                          stderr=subprocess.DEVNULL, cwd=os.getcwd()+'/'+SERVER_PATH).wait()
-        print("[+] Server configuration complete ..")
+        print(f"[{colored('+','green')}] Server configuration complete ..")
     
     if(args.rebuild):
-        print("[+] Building server ..")
+        print(f"[{colored('+','green')}] Building server ..")
         subprocess.Popen('npm run compile'.split(), stdout=subprocess.DEVNULL,
                      stderr=subprocess.DEVNULL, cwd=os.getcwd()+'/'+SERVER_PATH).wait()
-        print("[+] Server build successfull ..")
+        print(f"[{colored('+','green')}] Server build successfull ..")
 
-    print("[+] Initializing Server ..")
+    print(f"[{colored('+','green')}] Initializing Server ..")
     proc = subprocess.Popen(
         'npm start'.split(), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=os.getcwd()+'/'+SERVER_PATH)
     for line in iter(proc.stdout.readline, ""):
         if(b'npm ERR!' in line):
-            print(line)
-            print("[-] An error has occured while starting the server\nRestarting the server")
+            print(colored(line,'red'))
+            print(f"[{colored('-','red')}] An error has occured while starting the server\nRestarting the server")
             os.system('killall node')
             os.system('killall npm')
             sys.exit(-1)
@@ -154,6 +155,6 @@ if __name__ == '__main__':
     if len(args.f) > 1:
         Process(target=initialize, kwargs={"videos":args.f[1:], "server":server, "first":False}).run()
 
-    print('\n'+'#'*50+'\n')
+    print('\n'+colored('#'*50,'green')+'\n')
     while True:
         time.sleep(1)

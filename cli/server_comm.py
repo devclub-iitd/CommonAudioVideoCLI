@@ -3,6 +3,7 @@ import time
 import psutil
 
 from util import path2title, get_interface
+from termcolor import colored
 
 SERVER_ADDR = "localhost"
 ARGS = {}
@@ -22,25 +23,25 @@ class VLC_signals(socketio.ClientNamespace):
         print('connected')
 
     def on_userId(self,  data):
-        print('userId is ',  data)
+        print('userId is ',  colored(data,'blue'))
 
     def on_disconnect(self):
         print('disconnected')
 
     def on_play(self,  *args,  **kwargs):
         state = args[0]
-        print("[$] Play signal recieved")
+        print(f"[{colored('$','blue')}] Play signal recieved")
         self.player.play()
 
     def on_pause(self,  *args,  **kwargs):
         state = args[0]
-        print("[$] Pause signal recieved")
+        print(f"[{colored('$','blue')}] Pause signal recieved")
         self.player.pause()
 
     def on_seek(self,  *args,  **kwargs):
         state = args[0]
         seek_time = int(time.time() - state['last_updated'] + state['position'])
-        print(f"[$] Seek signal recieved ==> seeking to {seek_time}")
+        print(f"[{colored('$','blue')}] Seek signal recieved ==> seeking to {colored(seek_time,'yellow')}")
         self.player.seek(seek_time)
 
     def on_createRoom(self, *args,  **kwargs):
@@ -58,7 +59,7 @@ class VLC_signals(socketio.ClientNamespace):
         print_url(url)
         if(ARGS["qr"]):
             from util import print_qr
-            print("\n[#] Or scan the QR code given below")
+            print(f"\n[{colored('$','blue')}] Or scan the QR code given below")
             print_qr(url)
 
 
@@ -86,7 +87,7 @@ class ServerConnection():
         self.sio.register_namespace(self.signals)
 
     def track_change(self,videoPath):
-        print("[$] Changing track to ", path2title(videoPath))
+        print(f"[{colored('#','yellow')}] Changing track to ", colored(path2title(videoPath),'green') )
         self.send('changeTrack',{
             self.tracks[videoPath][0] : self.tracks[videoPath][1]
         })
@@ -105,14 +106,14 @@ class ServerConnection():
 
     def upload(self, videoPath ,audioPath):
         """ Uploads audio file to the webserver """
-        print(f"[+] Uploading {path2title(videoPath)} to server ...")
+        print(f"[{colored('+','green')}] Uploading {colored(path2title(output_path),'green')} to server ...")
         import requests
         url = f"http://{SERVER_ADDR}:5000/api/upload/"
         files = {'file': (path2title(videoPath),  open(audioPath,  'rb'),  'audio/ogg')}
         r = requests.post(url=url, files=files, data={"title": path2title(videoPath)})
 
         self.tracks[videoPath]= ("trackId" ,r.json()['trackId'])
-        print(f"Upload complete for file {path2title(videoPath)}")
+        print(f"Upload complete for file {colored(path2title(output_path),'green')}")
 
     def addAudioPath(self, videoPath, audioPath):
         self.tracks[videoPath] = ("audioPath", audioPath)
