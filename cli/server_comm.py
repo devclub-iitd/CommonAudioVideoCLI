@@ -5,6 +5,7 @@ import psutil
 from util import path2title, get_interface
 
 SERVER_ADDR = "localhost"
+ARGS = {}
 
 
 # this is used internally by ServerConnection
@@ -28,26 +29,25 @@ class VLC_signals(socketio.ClientNamespace):
 
     def on_play(self,  *args,  **kwargs):
         state = args[0]
-        print("Play signal recieved with the following data",  state)
+        print("[$] Play signal recieved")
         self.player.play()
 
     def on_pause(self,  *args,  **kwargs):
         state = args[0]
-        print("Pause signal recieved with the following data", state)
+        print("[$] Pause signal recieved")
         self.player.pause()
 
     def on_seek(self,  *args,  **kwargs):
         state = args[0]
-        print("Seek signal recieved with the following data", state)
-        self.player.seek(
-            int(time.time() - state['last_updated'] + state['position']))
+        seek_time = int(time.time() - state['last_updated'] + state['position'])
+        print(f"[$] Seek signal recieved ==> seeking to {seek_time}")
+        self.player.seek(seek_time)
 
     def on_createRoom(self, *args,  **kwargs):
         self.roomId = args[0]['roomId']
-        from main import parse
-        args = parse()
+        
         url = "http://%s:5000/client/stream/?roomId=%s"
-        if(args.web):
+        if(ARGS["web"]):
             url = url % (SERVER_ADDR, self.roomId)
         else:
             addrs = psutil.net_if_addrs()
@@ -56,9 +56,9 @@ class VLC_signals(socketio.ClientNamespace):
             url = url % (local_addr, self.roomId)
         from util import print_url
         print_url(url)
-        if(args.qr):
+        if(ARGS["qr"]):
             from util import print_qr
-            print("Or scan the QR code given below")
+            print("\n[#] Or scan the QR code given below")
             print_qr(url)
 
 
@@ -86,7 +86,7 @@ class ServerConnection():
         self.sio.register_namespace(self.signals)
 
     def track_change(self,videoPath):
-        print("Changing track to ", videoPath)
+        print("[$] Changing track to ", path2title(videoPath))
         self.send('changeTrack',{
             self.tracks[videoPath][0] : self.tracks[videoPath][1]
         })
@@ -105,13 +105,19 @@ class ServerConnection():
 
     def upload(self, videoPath ,audioPath):
         """ Uploads audio file to the webserver """
-        print("Uploading to server")
+        print(f"[+] Uploading {path2title(videoPath)} to server ...")
         import requests
         url = f"http://{SERVER_ADDR}:5000/api/upload/"
         files = {'file': (path2title(videoPath),  open(audioPath,  'rb'),  'audio/ogg')}
         r = requests.post(url=url, files=files, data={"title": path2title(videoPath)})
 
         self.tracks[videoPath]= ("trackId" ,r.json()['trackId'])
+        print(f"Upload complete for file {path2title(videoPath)}")
 
     def addAudioPath(self, videoPath, audioPath):
         self.tracks[videoPath] = ("audioPath", audioPath)
+
+
+def set_vars(args):
+    ARGS["web"] = args.web
+    ARGS["qr"] = args.qr

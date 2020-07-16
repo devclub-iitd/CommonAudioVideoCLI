@@ -8,10 +8,12 @@ from multiprocessing import Process, Pool
 from multiprocessing.managers import BaseManager
 from itertools import product
 
-from server_comm import ServerConnection
+from server_comm import ServerConnection, set_vars
 from vlc_comm import player
 from util import get_videos, path2title
 from audio_extract import extract
+
+TO_CLEAR = ['cache','invite_link.txt','invite_link.svg']
 
 
 def parse():
@@ -33,10 +35,12 @@ def parse():
     group.add_argument('--web', help="Force routing through a web server",
                        dest="web", action="store_true")
     args = parser.parse_args()
+
     videos = []
+    
     for i in range(len(args.f)):
         args.f[i] = os.path.abspath(args.f[i])
-        videos.extend(get_videos(args.f[i]))
+        videos.extend(get_videos(args.f[i],TO_CLEAR))
     args.f = videos
     return args
 
@@ -47,23 +51,25 @@ def convert_async(paths):
     pool = Pool()
     files = []
     st = time.perf_counter()
-    print("Converting files")
+    print("[+] Extraction of audio started ...")
     p = pool.starmap_async(extract, product(
         paths, [args.q]), callback=files.extend)
 
     p.wait()
-    print(f"Completed extraction of {len(paths)} file(s) in {time.perf_counter()-st} seconds")
+    print(f"[+] Completed extraction of {len(paths)} file(s) in {time.perf_counter()-st} seconds")
     return files
 
 
 def exitHandler(*args, **kwargs):
-    if(os.path.exists('cache')):
-        try:
-            os.remove('cache')
-        except:
-            pass
     os.system("killall node 2> /dev/null")
     os.system("killall npm 2> /dev/null")
+    for file in TO_CLEAR:
+        if (os.path.exists(file)):
+            try:
+                os.remove(file)
+            except:
+                pass
+        
     sys.exit(0)
 
 
@@ -71,28 +77,28 @@ def spawn_server():
     SERVER_PATH = '../../CommonAudioVideoServer/'
 
     if(not os.path.exists(SERVER_PATH)):
-        print("Invalid Server Path, Try reinstalling the package")
+        print("[-] Invalid Server Path, Try reinstalling the package")
         sys.exit(-1)
 
     if(not os.path.exists(SERVER_PATH+'node_modules')):
-        print("Configuring the server ..")
+        print("[+] Configuring the server ..")
         subprocess.Popen('npm install'.split(), stdout=subprocess.DEVNULL,
                          stderr=subprocess.DEVNULL, cwd=os.getcwd()+'/'+SERVER_PATH).wait()
-        print("Server configuration complete ..")
+        print("[+] Server configuration complete ..")
     
     if(args.rebuild):
-        print("Building server ..")
+        print("[+] Building server ..")
         subprocess.Popen('npm run compile'.split(), stdout=subprocess.DEVNULL,
                      stderr=subprocess.DEVNULL, cwd=os.getcwd()+'/'+SERVER_PATH).wait()
-        print("Server build successfull ..")
+        print("[+] Server build successfull ..")
 
-    print("Initializing Server ..")
+    print("[+] Initializing Server ..")
     proc = subprocess.Popen(
         'npm start'.split(), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=os.getcwd()+'/'+SERVER_PATH)
     for line in iter(proc.stdout.readline, ""):
         if(b'npm ERR!' in line):
             print(line)
-            print("An error has occured while starting the server\nRestarting the server")
+            print("[-] An error has occured while starting the server\nRestarting the server")
             os.system('killall node')
             os.system('killall npm')
             sys.exit(-1)
@@ -126,6 +132,8 @@ if __name__ == '__main__':
     signal.signal(signal.SIGINT, exitHandler)
 
     args = parse()
+    set_vars(args)
+
     if(not args.web):
         spawn_server()
 
@@ -146,7 +154,6 @@ if __name__ == '__main__':
     if len(args.f) > 1:
         Process(target=initialize, kwargs={"videos":args.f[1:], "server":server, "first":False}).run()
 
-
+    print('\n'+'#'*50+'\n')
     while True:
-        print(player.getState())
         time.sleep(1)
