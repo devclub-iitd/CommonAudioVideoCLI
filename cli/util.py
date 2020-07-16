@@ -126,4 +126,4 @@ class Animation:
     
     def complete(self):
         self.done = True
-        sys.stdout.write('Done!\n')
+        sys.stdout.write('\b..Done!\n')

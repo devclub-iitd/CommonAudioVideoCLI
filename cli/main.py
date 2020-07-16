@@ -11,7 +11,7 @@ from termcolor import colored
 
 from server_comm import ServerConnection, set_vars
 from vlc_comm import player
-from util import get_videos, path2title
+from util import get_videos, path2title, Animation
 from audio_extract import extract
 
 TO_CLEAR = ['cache','invite_link.txt','invite_link.svg']
@@ -83,17 +83,22 @@ def spawn_server():
 
     if(not os.path.exists(SERVER_PATH+'node_modules')):
         print(f"[{colored('+','green')}] Configuring the server ..")
+        anim = Animation()
         subprocess.Popen('npm install'.split(), stdout=subprocess.DEVNULL,
                          stderr=subprocess.DEVNULL, cwd=os.getcwd()+'/'+SERVER_PATH).wait()
+        anim.complete()
         print(f"[{colored('+','green')}] Server configuration complete ..")
     
     if(args.rebuild):
         print(f"[{colored('+','green')}] Building server ..")
+        anim = Animation()
         subprocess.Popen('npm run compile'.split(), stdout=subprocess.DEVNULL,
                      stderr=subprocess.DEVNULL, cwd=os.getcwd()+'/'+SERVER_PATH).wait()
+        anim.complete()
         print(f"[{colored('+','green')}] Server build successfull ..")
 
     print(f"[{colored('+','green')}] Initializing Server ..")
+    anim = Animation()
     proc = subprocess.Popen(
         'npm start'.split(), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=os.getcwd()+'/'+SERVER_PATH)
     for line in iter(proc.stdout.readline, ""):
@@ -104,6 +109,7 @@ def spawn_server():
             os.system('killall npm')
             sys.exit(-1)
         if(b'Press CTRL-C to stop' in line):
+            anim.complete()
             break
 
 def initialize(videos,server,first=False):
@@ -155,6 +161,6 @@ if __name__ == '__main__':
     if len(args.f) > 1:
         Process(target=initialize, kwargs={"videos":args.f[1:], "server":server, "first":False}).run()
 
-    print('\n'+colored('#'*50,'green')+'\n')
+    print('\n'+colored('#'*70,'green')+'\n')
     while True:
         time.sleep(1)

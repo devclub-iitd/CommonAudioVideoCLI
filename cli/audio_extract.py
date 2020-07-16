@@ -34,7 +34,7 @@ def extract(path, quality="medium"):
         if(os.path.exists(output_path)):
             print(f"[{colored('#','yellow')}] Audio file {colored(path2title(output_path),'green')} already exists")
             return output_path
-        print(f"[{colored('+','green')}] Extracting audio for file %s" % (colored(path2title(path),'green')),end='')
+        print(f"\n[{colored('+','green')}] Extracting audio for file %s" % (colored(path2title(path),'green')),end='')
         from util import Animation
         anim = Animation()
         file.audio.output(output_path, acodec='libvorbis',

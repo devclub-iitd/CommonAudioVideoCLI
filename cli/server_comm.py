@@ -26,7 +26,7 @@ class VLC_signals(socketio.ClientNamespace):
         print('userId is ',  colored(data,'blue'))
 
     def on_disconnect(self):
-        print('disconnected')
+       print(colored('\nDisconnected...','red')+colored('\nExiting Now...Goodbye!','green'))
 
     def on_play(self,  *args,  **kwargs):
         state = args[0]
