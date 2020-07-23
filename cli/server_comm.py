@@ -2,7 +2,11 @@ import socketio
 import time
 import psutil
 
+from util import path2title, get_interface
+from termcolor import colored
+
 SERVER_ADDR = "localhost"
+ARGS = {}
 
 
 # this is used internally by ServerConnection
@@ -19,43 +23,43 @@ class VLC_signals(socketio.ClientNamespace):
         print('connected')
 
     def on_userId(self,  data):
-        print('userId is ',  data)
+        print('userId is ',  colored(data,'blue'))
 
     def on_disconnect(self):
-        print('disconnected')
+       print(colored('\nDisconnected...','red')+colored('\nExiting Now...Goodbye!','green'))
 
     def on_play(self,  *args,  **kwargs):
         state = args[0]
-        print("Play signal recieved with the following data",  state)
+        print(f"[{colored('$','blue')}] Play signal recieved")
         self.player.play()
 
     def on_pause(self,  *args,  **kwargs):
         state = args[0]
-        print("Pause signal recieved with the following data", state)
+        print(f"[{colored('$','blue')}] Pause signal recieved")
         self.player.pause()
 
     def on_seek(self,  *args,  **kwargs):
         state = args[0]
-        print("Seek signal recieved with the following data", state)
-        self.player.seek(
-            int(time.time() - state['last_updated'] + state['position']))
+        seek_time = int(time.time() - state['last_updated'] + state['position'])
+        print(f"[{colored('$','blue')}] Seek signal recieved ==> seeking to {colored(seek_time,'yellow')}")
+        self.player.seek(seek_time)
 
     def on_createRoom(self, *args,  **kwargs):
         self.roomId = args[0]['roomId']
-        from main import parse
-        args = parse()
+        
         url = "http://%s:5000/client/stream/?roomId=%s"
-        if(args.web):
+        if(ARGS["web"]):
             url = url % (SERVER_ADDR, self.roomId)
         else:
             addrs = psutil.net_if_addrs()
-            local_addr = addrs['wlp3s0'][0].address       # modify
+            interface = get_interface()
+            local_addr = addrs[interface][0].address       # modify
             url = url % (local_addr, self.roomId)
         from util import print_url
         print_url(url)
-        if(args.qr):
+        if(ARGS["qr"]):
             from util import print_qr
-            print("Or scan the QR code given below")
+            print(f"\n[{colored('$','blue')}] Or scan the QR code given below")
             print_qr(url)
 
 
@@ -64,10 +68,10 @@ class ServerConnection():
     def __init__(self):
         self.sio = socketio.Client()
         self.sio.connect('http://localhost:5000')
-        from main import parse
-        self.args = parse()
+        self.tracks = {}
+
         # For testing purposes...
-        self.trackId = '5ed554389cd979784f6926e3'   # Bella-Caio
+        # self.trackId = '5ed554389cd979784f6926e3'   # Bella-Caio
         # self.trackId = '5ed88aae25f4787bea4cc07f'     # Dark
         # self.trackId = '5ee350d3c67ae85cae6f669c'    # mha op
 
@@ -82,24 +86,39 @@ class ServerConnection():
         self.signals.bind()
         self.sio.register_namespace(self.signals)
 
-    def create_room(self, title):
-        if self.args.web:
-            print('track Id is ', self.trackId)
-            self.send('createRoom', {
-                      'title': title, 'trackId': self.trackId, 'onlyHost': self.args.onlyHost})
-        else:
-            self.send('createRoom', {
-                      'title': title, 'audioPath': self.audioPath, 'onlyHost': self.args.onlyHost})
+    def track_change(self,videoPath):
+        print(f"[{colored('#','yellow')}] Changing track to ", colored(path2title(videoPath),'green') )
+        self.send('changeTrack',{
+            self.tracks[videoPath][0] : self.tracks[videoPath][1]
+        })
 
-    def upload(self,  fileName,  path):
+    def add_track(self, videoPath):
+        self.send('addTrack',{
+            "title": path2title(videoPath),
+            self.tracks[videoPath][0] : self.tracks[videoPath][1]
+        })
+
+    def create_room(self, videoPath):
+        self.send('createRoom',{
+            "title": path2title(videoPath),
+            self.tracks[videoPath][0] : self.tracks[videoPath][1]
+        })
+
+    def upload(self, videoPath ,audioPath):
         """ Uploads audio file to the webserver """
-        print("Uploading to server")
+        print(f"[{colored('+','green')}] Uploading {colored(path2title(output_path),'green')} to server ...")
         import requests
-        url = f"{SERVER_ADDR}/api/upload/"
-        files = {'file': (fileName,  open(path,  'rb'),  'audio/ogg')}
-        r = requests.post(url=url, files=files, data={"title": fileName})
-        print(r.json())
-        self.trackId = r.json()['trackId']
+        url = f"http://{SERVER_ADDR}:5000/api/upload/"
+        files = {'file': (path2title(videoPath),  open(audioPath,  'rb'),  'audio/ogg')}
+        r = requests.post(url=url, files=files, data={"title": path2title(videoPath)})
 
-    def addAudioPath(self, audioPath):
-        self.audioPath = audioPath
+        self.tracks[videoPath]= ("trackId" ,r.json()['trackId'])
+        print(f"Upload complete for file {colored(path2title(output_path),'green')}")
+
+    def addAudioPath(self, videoPath, audioPath):
+        self.tracks[videoPath] = ("audioPath", audioPath)
+
+
+def set_vars(args):
+    ARGS["web"] = args.web
+    ARGS["qr"] = args.qr
