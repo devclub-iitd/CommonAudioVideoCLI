@@ -53,9 +53,14 @@ def get_duration(file):
     cmd[2] = cmd[2].replace('%20',' ')
 
     time_str = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.STDOUT).communicate()
-    time_str = re.search('Duration: (.*), start',time_str[0].decode().replace('%20',' ')).groups()[0]
-    hours, minutes, seconds = time_str.split(':')
-    return int(hours)*3600 + int(minutes)*60 + float(seconds)
+    try:
+        time_str = re.search('Duration: (.*), start',time_str[0].decode().replace('%20',' ')).groups()[0]
+        hours, minutes, seconds = time_str.split(':')
+        return int(hours)*3600 + int(minutes)*60 + float(seconds)
+    except:
+        return 0
+    
+    
 
 def convert2mkv(path):
     out_path = path+'.mkv'

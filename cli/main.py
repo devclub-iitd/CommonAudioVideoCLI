@@ -125,13 +125,13 @@ def initialize(videos,server,first=False):
         player.enqueue(video)
         
         if(first):
-            server.create_room(video)
+            server.create_room()
             player.play()
             player.pause()
             player.seek(0)
             
-        else:
-            server.add_track(video)
+        
+        server.add_track(video)
 
 
 if __name__ == '__main__':

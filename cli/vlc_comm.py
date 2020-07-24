@@ -100,7 +100,6 @@ class VLCplayer():  # Class that manages the VLC player instance on the machine.
 def on_start(match, state, server):
     file = match.groups()[0]
     fileFormatted = file.replace('%20', ' ')
-    server.track_change(videoPath=fileFormatted)
 
     state['path'] = file
     state['title'] = path2title(file)
@@ -109,6 +108,7 @@ def on_start(match, state, server):
     state['position'] = 0.0
     state['last_updated'] = time.time()
 
+    server.track_change(videoPath=fileFormatted,state=state)
 
 def on_stop(match, state, server):
     state['is_playing'] = False
