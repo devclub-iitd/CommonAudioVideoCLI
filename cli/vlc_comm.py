@@ -10,8 +10,8 @@ from termcolor import colored
 
 PORT = 1234
 
-class VLCplayer():  # Class that manages the VLC player instance on the machine.
 
+class VLCplayer:  # Class that manages the VLC player instance on the machine.
     def __init__(self, port=PORT):
         self.port = port
         self.proc = None
@@ -20,23 +20,26 @@ class VLCplayer():  # Class that manages the VLC player instance on the machine.
     def readState(self):
         """ This reads the JSON state from cache of the video that is currently playing """
 
-        return json.loads(open('cache', 'r').read())
+        return json.loads(open("cache", "r").read())
 
-    def launch(self,sub):
+    def launch(self, sub):
         """ Launches a VLC instance """
 
-        bashCommand = 'vlc --extraintf rc --rc-host localhost:%d -vv' % (
-            self.port)
-        if(sub is not None and os.path.exists(sub)):
+        bashCommand = "vlc --extraintf rc --rc-host localhost:%d -vv" % (self.port)
+        if sub is not None and os.path.exists(sub):
             bashCommand += " --sub-file %s" % (sub)
 
         # Start a subprocess to execute the VLC command
-        self.proc = subprocess.Popen(bashCommand.split(
-        ), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
+        self.proc = subprocess.Popen(
+            bashCommand.split(),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            universal_newlines=True,
+        )
 
         # Create a socket connection to the RC interface of VLC that is listening for commands at localhost:1234
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.server_address = ('localhost', self.port)
+        self.server_address = ("localhost", self.port)
         wait_until_error(self.sock.connect, timeout=-1)(self.server_address)
 
         # Dump any trash data like welcome message that we may recieve from the server after connecting
@@ -45,12 +48,12 @@ class VLCplayer():  # Class that manages the VLC player instance on the machine.
     """ The following functions send a specific command to the VLC instance using the socket connection """
 
     def play(self):
-        message = 'play\n'.encode()
+        message = "play\n".encode()
         send_until_writable()(self.sock.sendall, self.sock, message)
         time.sleep(0.5)
 
     def pause(self):
-        message = 'pause\n'.encode()
+        message = "pause\n".encode()
         send_until_writable()(self.sock.sendall, self.sock, message)
         time.sleep(0.5)
 
@@ -65,12 +68,12 @@ class VLCplayer():  # Class that manages the VLC player instance on the machine.
         time.sleep(0.5)
 
     def faster_playback(self):
-        message = 'faster\n'.encode()
+        message = "faster\n".encode()
         send_until_writable()(self.sock.sendall, self.sock, message)
         time.sleep(0.5)
 
     def slower_playback(self):
-        message = 'slower\n'.encode()
+        message = "slower\n".encode()
         send_until_writable()(self.sock.sendall, self.sock, message)
         time.sleep(0.5)
 
@@ -87,82 +90,83 @@ class VLCplayer():  # Class that manages the VLC player instance on the machine.
         state = player.readState()
         if state is None:
             return
-        if('last_updated' in state.keys()):
-            initial_pos = state['position']
-            extra = time.time() - \
-                float(state['last_updated']) if state['is_playing'] else 0
+        if "last_updated" in state.keys():
+            initial_pos = state["position"]
+            extra = (
+                time.time() - float(state["last_updated"]) if state["is_playing"] else 0
+            )
             final_pos = initial_pos + extra
-            state['position'] = final_pos
-            state.pop('last_updated')
+            state["position"] = final_pos
+            state.pop("last_updated")
             return state
 
 
 def on_start(match, state, server):
     file = match.groups()[0]
-    fileFormatted = file.replace('%20', ' ')
+    fileFormatted = file.replace("%20", " ")
     server.track_change(videoPath=fileFormatted)
 
-    state['path'] = file
-    state['title'] = path2title(file)
-    state['duration'] = get_duration(file)*1000
-    state['is_playing'] = True
-    state['position'] = 0.0
-    state['last_updated'] = time.time()
+    state["path"] = file
+    state["title"] = path2title(file)
+    state["duration"] = get_duration(file) * 1000
+    state["is_playing"] = True
+    state["position"] = 0.0
+    state["last_updated"] = time.time()
 
 
 def on_stop(match, state, server):
-    state['is_playing'] = False
+    state["is_playing"] = False
     try:
-        del state['duration']
+        del state["duration"]
     except:
         print("No duration found")
     try:
-        del state['path']
-        del state['title']
+        del state["path"]
+        del state["title"]
     except:
         print("No path found")
 
-    state['position'] = 0.0
-    state['last_updated'] = time.time()
+    state["position"] = 0.0
+    state["last_updated"] = time.time()
 
 
 def on_play(match, state, server):
-    if not state['is_playing']:
-        state['is_playing'] = True
-        state['last_updated'] = time.time()
-        server.send('play', state)
+    if not state["is_playing"]:
+        state["is_playing"] = True
+        state["last_updated"] = time.time()
+        server.send("play", state)
 
 
 def on_pause(match, state, server):
-    if state['is_playing']:
-        state['is_playing'] = False
-        state['position'] = player.getState(
-        )['position'] if player.getState() is not None else 0
-        state['last_updated'] = time.time()
-        server.send('pause', state)
+    if state["is_playing"]:
+        state["is_playing"] = False
+        state["position"] = (
+            player.getState()["position"] if player.getState() is not None else 0
+        )
+        state["last_updated"] = time.time()
+        server.send("pause", state)
 
 
 def on_seek(match, state, server):
     match = match.groups()[0] or match.groups()[1]
-    if 'i_pos' in match:
+    if "i_pos" in match:
         # Match is the absolute duratoin
-        match = match.split('=')[1].strip()
-        state['position'] = float(match)/1000000.0
-        state['last_updated'] = time.time()
+        match = match.split("=")[1].strip()
+        state["position"] = float(match) / 1000000.0
+        state["last_updated"] = time.time()
 
     # This is used when seek occurs through the slider
-    elif '%' in match:
+    elif "%" in match:
         # Match is the percentage of the total duration
         match = match[:-1]
-        state['position'] = float(
-            match)*float(state['duration'])/100000.0
-        state['last_updated'] = time.time()
+        state["position"] = float(match) * float(state["duration"]) / 100000.0
+        state["last_updated"] = time.time()
 
     # this is for mp4 files
     else:
-        state['position'] = int(match)/1000
-        state['last_updated'] = time.time()
-    server.send('seek', state)
+        state["position"] = int(match) / 1000
+        state["last_updated"] = time.time()
+    server.send("seek", state)
 
 
 def get_regex_match(line):
@@ -192,7 +196,7 @@ def parse_logs(player, server):
     # other_connection = server_comm.ServerConnection()
 
     state = player.readState()
-    if(state is None):
+    if state is None:
         state = {}
 
     # Continuosly read the VLC logs
@@ -203,6 +207,7 @@ def parse_logs(player, server):
             REGEX_DICT[regex](match, state, server)
 
         # Dump the parsed data into cache
-        open('cache', 'w').write(json.dumps(state))
+        open("cache", "w").write(json.dumps(state))
+
 
 player = VLCplayer()
