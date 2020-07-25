@@ -23,10 +23,4 @@ jobs:
     name: Style check
     runs-on: ubuntu-latest
     steps:
-      - name: Install Black
-        run: pip3 install black
-      - name: Black pep8 style
-        run: |
-          echo "\e[36mChecking Python code style.\e[0m" && \
-          black ./ --check --diff || \
-          ( echo "\e[33mRun \e[36mmake format-style-python\e[33m to fix style errors.\e[0m"; exit 1 )
+      - uses: jpetrucciani/black-check@master
