@@ -171,15 +171,15 @@ def initialize(videos, server, first=False):
             server.addAudioPath(video, video[:-3] + "ogg")
 
         player.enqueue(video)
-
-        if first:
-            server.create_room(video)
+        
+        if(first):
+            server.create_room()
             player.play()
             player.pause()
             player.seek(0)
-
-        else:
-            server.add_track(video)
+            
+        
+        server.add_track(video)
 
 
 if __name__ == "__main__":

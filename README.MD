@@ -16,6 +16,11 @@ To run this project you need to have python 3.6 or higher installed
     git clone https://github.com/devclub-iitd/CommonAudioVideoCLI.git
     cd CommonAudioVideoCLI
     ```
+- To run locally you will also need to clone the server repo in the same directory in which CommonAudioVideoCLI is.
+
+```bash
+git clone https://github.com/devclub-iitd/CommonAudioVideoServer.git local
+```
 
 - Installing dependencies
 
@@ -26,21 +31,21 @@ To run this project you need to have python 3.6 or higher installed
 - Running the CLI
 
     ```bash
-    python3 cli/main.py [--flags]
+    cd CommonAudioVideoCLI/cli
+    python3 main.py [--flags]
     ```
 
 ## CLI flags
 
 | FLAG NAME | arguments | usage | required | default
 |--|--|--|--|--
-| - - file / -f | path to one or more video files | indicates which videos are to be converted and queued | yes
+| - - file / -f | path to one or more video files or directories(in which case all video files inside the directory are taken to form a playlist) | indicates which videos are to be converted and queued | yes
 | -- sub / -s |  path to one more subtitle files in order | adds the subtitle track to the playback | no| -
 | -- qr| - |encodes the invite link as a qr code and prints it to the console| no| false
 | --audio-quality| low/medium/good/high | the quality of the audio to be extracted from the video file| no | medium
-| --local | - | set up local web server on the host for streaming
-|--web| - | use already hosted webserver  
-|--control| - | only the host can control playback
-
+|--web| - | use already hosted webserver | no | false 
+|--control| - | only the host can control playback | no | false
+| --force-rebuild| - | Use this to rebuild the server (must be used the first time) | no | false
 ## Socket events
 
 | EVENT NAME | action

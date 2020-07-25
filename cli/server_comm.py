@@ -94,12 +94,12 @@ class ServerConnection:
         self.signals.bind()
         self.sio.register_namespace(self.signals)
 
-    def track_change(self, videoPath):
-        print(
-            f"[{colored('#','yellow')}] Changing track to ",
-            colored(path2title(videoPath), "green"),
-        )
-        self.send("changeTrack", {self.tracks[videoPath][0]: self.tracks[videoPath][1]})
+    def track_change(self,videoPath,state):
+        print(f"[{colored('#','yellow')}] Changing track to ", colored(path2title(videoPath),'green') )
+        self.send('changeTrack',{
+            self.tracks[videoPath][0] : self.tracks[videoPath][1],
+            "state": state
+        })
 
     def add_track(self, videoPath):
         self.send(
@@ -110,28 +110,23 @@ class ServerConnection:
             },
         )
 
-    def create_room(self, videoPath):
-        self.send(
-            "createRoom",
-            {
-                "title": path2title(videoPath),
-                self.tracks[videoPath][0]: self.tracks[videoPath][1],
-            },
-        )
+    def create_room(self):
+        self.send('createRoom',{
+            "onlyHost": ARGS["onlyHost"]
+        })
 
-    def upload(self, videoPath, audioPath):
+    def upload(self, videoPath ,audioPath):
         """ Uploads audio file to the webserver """
-        print(
-            f"[{colored('+','green')}] Uploading {colored(path2title(output_path),'green')} to server ..."
-        )
+        print(f"[{colored('+','green')}] Uploading {colored(path2title(audioPath),'green')} to server ...")
         import requests
 
         url = f"http://{SERVER_ADDR}:5000/api/upload/"
         files = {"file": (path2title(videoPath), open(audioPath, "rb"), "audio/ogg")}
         r = requests.post(url=url, files=files, data={"title": path2title(videoPath)})
 
-        self.tracks[videoPath] = ("trackId", r.json()["trackId"])
-        print(f"Upload complete for file {colored(path2title(output_path),'green')}")
+        self.tracks[videoPath]= ("trackId" ,r.json()['trackId'])
+        print(
+            f"[{colored('+','green')}] Upload complete for file {colored(path2title(audioPath),'green')}")
 
     def addAudioPath(self, videoPath, audioPath):
         self.tracks[videoPath] = ("audioPath", audioPath)
@@ -140,3 +135,4 @@ class ServerConnection:
 def set_vars(args):
     ARGS["web"] = args.web
     ARGS["qr"] = args.qr
+    ARGS["onlyHost"] = args.onlyHost
